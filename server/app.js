@@ -55,50 +55,55 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Database connection setup
-let isConnecting = false;
+// Database connection setup  
 const connectDB = async () => {
-  if (isConnecting) return;
-  isConnecting = true;
-  
   try {
-    let mongoURI = process.env.MONGODB_URI || process.env.MONGO_URI;
+    // Check for various MongoDB URI environment variables
+    let mongoURI = process.env.MONGODB_URI || 
+                   process.env.MONGO_URI || 
+                   process.env.DATABASE_URL ||
+                   process.env.MONGODB_URL;
+    
+    console.log('[DB] Environment check:');
+    console.log('[DB] MONGODB_URI exists:', !!process.env.MONGODB_URI);
+    console.log('[DB] MONGO_URI exists:', !!process.env.MONGO_URI);
+    console.log('[DB] DATABASE_URL exists:', !!process.env.DATABASE_URL);
+    console.log('[DB] NODE_ENV:', process.env.NODE_ENV);
     
     // Fix the MongoDB URI by adding database name if missing
-    if (mongoURI && mongoURI.includes('mongodb.net') && !mongoURI.includes('/anime-blog')) {
-      mongoURI = mongoURI.replace('/?', '/anime-blog?');
-    }
-    
-    if (!mongoURI) {
+    if (mongoURI) {
+      if (mongoURI.includes('mongodb.net') && !mongoURI.includes('/anime-blog')) {
+        mongoURI = mongoURI.replace('/?', '/anime-blog?');
+      }
+      console.log('[DB] Using cloud MongoDB Atlas');
+    } else {
       mongoURI = 'mongodb://localhost:27017/anime-blog';
+      console.log('[DB] Using local MongoDB fallback');
     }
     
-    console.log('[DB] Connecting to MongoDB...');
-    console.log('[DB] URI type:', mongoURI.includes('mongodb.net') ? 'MongoDB Atlas' : 'Local MongoDB');
+    console.log('[DB] Attempting connection...');
     
     await mongoose.connect(mongoURI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 15000,
-      connectTimeoutMS: 15000,
-      maxPoolSize: 5,
-      socketTimeoutMS: 45000,
-      bufferCommands: false,
+      serverSelectionTimeoutMS: 30000,
+      connectTimeoutMS: 30000,
+      maxPoolSize: 10,
+      socketTimeoutMS: 0,
+      bufferCommands: true,
       bufferMaxEntries: 0
     });
     
-    console.log('🎌 Connected to MongoDB successfully');
-    isConnecting = false;
+    console.log('🎌 MongoDB connected successfully');
     
   } catch (err) {
-    console.error('❌ Database connection error:', err.message);
-    isConnecting = false;
+    console.error('❌ Database connection failed:', err.message);
+    console.error('❌ Full error:', err);
     
-    // Retry connection after 5 seconds
-    setTimeout(() => {
-      console.log('[DB] Retrying connection...');
-      connectDB();
-    }, 5000);
+    // Don't retry in serverless environment
+    if (process.env.VERCEL) {
+      console.log('[VERCEL] Running in serverless, skipping retry');
+    }
   }
 };
 

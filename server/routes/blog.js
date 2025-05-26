@@ -8,12 +8,16 @@ const router = express.Router();
 // Get all published blog posts (with pagination)
 router.get('/', optionalAuth, async (req, res) => {
   try {
-    // Check database connection
-    if (require('mongoose').connection.readyState !== 1) {
-      console.error('[BLOG API] Database not connected');
-      return res.status(503).json({ 
-        message: 'Database connection unavailable',
-        error: 'Service temporarily unavailable'
+    const mongoose = require('mongoose');
+    console.log('[BLOG API] Database state:', mongoose.connection.readyState);
+    
+    // If database is not connected, try to return empty data instead of error
+    if (mongoose.connection.readyState !== 1) {
+      console.error('[BLOG API] Database not connected, returning empty data');
+      return res.json({
+        posts: [],
+        pagination: { page: 1, limit: 10, total: 0, pages: 0 },
+        message: 'Database connection unavailable - showing empty results'
       });
     }
 
