@@ -16,6 +16,9 @@ const PORT = process.env.PORT || 5000;
 
 console.log('[SERVER APP START] Attempting to load server/app.js in Vercel environment...');
 
+// Trust proxy for Vercel
+app.set('trust proxy', 1);
+
 // Security middleware
 app.use(helmet());
 app.use(cors({
@@ -26,7 +29,8 @@ app.use(cors({
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 100, // limit each IP to 100 requests per windowMs
+  trustProxy: true
 });
 app.use(limiter);
 
@@ -52,6 +56,25 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     database: dbStatus,
     env: process.env.NODE_ENV
+  });
+});
+
+// Debug endpoint to check environment variables (remove in production)
+app.get('/api/debug', (req, res) => {
+  res.json({
+    envVars: {
+      MONGODB_URI: !!process.env.MONGODB_URI,
+      MONGO_URI: !!process.env.MONGO_URI,
+      DATABASE_URL: !!process.env.DATABASE_URL,
+      MONGODB_URL: !!process.env.MONGODB_URL,
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL: !!process.env.VERCEL
+    },
+    allEnvKeys: Object.keys(process.env).filter(key => 
+      key.toLowerCase().includes('mongo') || 
+      key.toLowerCase().includes('database') ||
+      key.toLowerCase().includes('db')
+    )
   });
 });
 
@@ -89,9 +112,7 @@ const connectDB = async () => {
       serverSelectionTimeoutMS: 30000,
       connectTimeoutMS: 30000,
       maxPoolSize: 10,
-      socketTimeoutMS: 0,
-      bufferCommands: true,
-      bufferMaxEntries: 0
+      socketTimeoutMS: 0
     });
     
     console.log('🎌 MongoDB connected successfully');
@@ -113,10 +134,7 @@ mongoose.connection.on('error', (err) => {
 });
 
 mongoose.connection.on('disconnected', () => {
-  console.log('MongoDB disconnected, attempting to reconnect...');
-  if (!isConnecting) {
-    connectDB();
-  }
+  console.log('MongoDB disconnected');
 });
 
 mongoose.connection.on('connected', () => {
