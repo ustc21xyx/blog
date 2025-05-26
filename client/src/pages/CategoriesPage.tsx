@@ -38,12 +38,16 @@ const CategoriesPage: React.FC = () => {
 
     setSubmitting(true);
     try {
-      await evaluationApi.createCategory(formData);
+      const response = await evaluationApi.createCategory(formData);
+      console.log('Category created successfully:', response.data);
+      alert('🎉 分类添加成功！');
       setFormData({ name: '', description: '', color: '#3B82F6' });
       setShowCreateForm(false);
-      fetchCategories();
-    } catch (error) {
+      await fetchCategories(); // 确保等待刷新完成
+    } catch (error: any) {
       console.error('Failed to create category:', error);
+      const errorMessage = error.response?.data?.message || error.message || '创建分类失败';
+      alert(`❌ 创建失败: ${errorMessage}`);
     } finally {
       setSubmitting(false);
     }

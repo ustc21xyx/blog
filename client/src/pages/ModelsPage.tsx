@@ -40,12 +40,16 @@ const ModelsPage: React.FC = () => {
 
     setSubmitting(true);
     try {
-      await evaluationApi.createModel(formData);
+      const response = await evaluationApi.createModel(formData);
+      console.log('Model created successfully:', response.data);
+      alert('🎉 模型添加成功！');
       setFormData({ name: '', version: '', provider: '', description: '', color: '#10B981' });
       setShowCreateForm(false);
-      fetchModels();
-    } catch (error) {
+      await fetchModels(); // 确保等待刷新完成
+    } catch (error: any) {
       console.error('Failed to create model:', error);
+      const errorMessage = error.response?.data?.message || error.message || '创建模型失败';
+      alert(`❌ 创建失败: ${errorMessage}`);
     } finally {
       setSubmitting(false);
     }

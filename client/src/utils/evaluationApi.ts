@@ -15,6 +15,8 @@ export const evaluationApi = {
   
   updateCategory: (id: string, data: Partial<CreateCategoryForm>) => 
     api.put(`/evaluation/categories/${id}`, data),
+  
+  deleteCategory: (id: string) => api.delete(`/evaluation/categories/${id}`),
 
   // ========== 模型管理 ==========
   getModels: () => api.get('/evaluation/models'),
@@ -24,6 +26,8 @@ export const evaluationApi = {
   
   updateModel: (id: string, data: Partial<CreateModelForm>) => 
     api.put(`/evaluation/models/${id}`, data),
+  
+  deleteModel: (id: string) => api.delete(`/evaluation/models/${id}`),
 
   // ========== 题目管理 ==========
   getQuestions: (params?: {
