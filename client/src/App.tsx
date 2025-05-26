@@ -15,6 +15,12 @@ import ProfilePage from './pages/ProfilePage';
 import EditProfilePage from './pages/EditProfilePage';
 import DashboardPage from './pages/DashboardPage';
 import NotFoundPage from './pages/NotFoundPage';
+import EvaluationPage from './pages/EvaluationPage';
+import CategoriesPage from './pages/CategoriesPage';
+import ModelsPage from './pages/ModelsPage';
+import QuestionsPage from './pages/QuestionsPage';
+import AnswerQuestionPage from './pages/AnswerQuestionPage';
+import LeaderboardPage from './pages/LeaderboardPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -43,6 +49,14 @@ function App() {
             <Route path="/blog/:slug" element={<BlogPostPage />} />
             <Route path="/user/:username" element={<ProfilePage />} />
             <Route path="/profile/:username" element={<ProfilePage />} />
+            
+            {/* Evaluation Routes */}
+            <Route path="/evaluation" element={<EvaluationPage />} />
+            <Route path="/evaluation/categories" element={<CategoriesPage />} />
+            <Route path="/evaluation/models" element={<ModelsPage />} />
+            <Route path="/evaluation/questions" element={<QuestionsPage />} />
+            <Route path="/evaluation/questions/:questionId/answer" element={<AnswerQuestionPage />} />
+            <Route path="/evaluation/leaderboard" element={<LeaderboardPage />} />
             
             {/* Protected Routes */}
             <Route

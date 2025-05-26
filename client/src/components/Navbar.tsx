@@ -58,6 +58,13 @@ const Navbar = () => {
               {t('nav.about')}
               <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-kawaii transition-all duration-300 group-hover:w-full"></span>
             </Link>
+            <Link
+              to="/evaluation"
+              className="text-gray-600 dark:text-gray-300 hover:text-anime-purple-600 dark:hover:text-anime-purple-400 transition-colors duration-200 relative group"
+            >
+              模型评测 ⚡
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-kawaii transition-all duration-300 group-hover:w-full"></span>
+            </Link>
           </div>
 
           {/* Right side */}
@@ -207,6 +214,13 @@ const Navbar = () => {
                   onClick={() => setIsMenuOpen(false)}
                 >
                   About
+                </Link>
+                <Link
+                  to="/evaluation"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 dark:text-gray-300 hover:text-anime-purple-600 dark:hover:text-anime-purple-400"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  模型评测 ⚡
                 </Link>
 
                 {isAuthenticated ? (

@@ -103,3 +103,123 @@ export interface CreatePostForm {
   };
   isPublished: boolean;
 }
+
+// ========== 评测系统类型定义 ==========
+
+export interface EvaluationCategory {
+  _id: string;
+  name: string;
+  description: string;
+  color: string;
+  isActive: boolean;
+  createdBy: User;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EvaluationModel {
+  _id: string;
+  name: string;
+  version: string;
+  provider: string;
+  description: string;
+  color: string;
+  isActive: boolean;
+  createdBy: User;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface EvaluationQuestion {
+  _id: string;
+  title: string;
+  description?: string;
+  content: string;
+  contentType: 'text' | 'latex' | 'html' | 'mixed';
+  category: EvaluationCategory;
+  difficulty: 'easy' | 'medium' | 'hard';
+  maxScore?: number;
+  tags?: string[];
+  isActive: boolean;
+  createdBy: User;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ModelAnswer {
+  _id: string;
+  questionId: string;
+  model: EvaluationModel;
+  content: string;
+  contentType: 'text' | 'latex' | 'html' | 'mixed';
+  renderedContent?: string;
+  score: number;
+  scoredBy?: User;
+  scoredAt?: string;
+  version: number;
+  isActive: boolean;
+  submittedBy: User;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ModelRanking {
+  _id: string;
+  modelName: string;
+  modelVersion: string;
+  modelProvider: string;
+  modelColor: string;
+  categoryScores: {
+    categoryId: string;
+    categoryName: string;
+    categoryColor: string;
+    averageScore: number;
+    questionCount: number;
+  }[];
+  totalScore: number;
+  totalQuestions: number;
+  rank: number;
+}
+
+export interface CreateCategoryForm {
+  name: string;
+  description?: string;
+  color?: string;
+}
+
+export interface CreateModelForm {
+  name: string;
+  version?: string;
+  provider?: string;
+  description?: string;
+  color?: string;
+}
+
+export interface CreateQuestionForm {
+  title: string;
+  description?: string;
+  content: string;
+  contentType: 'text' | 'latex' | 'html' | 'mixed';
+  category: string;
+  difficulty: 'easy' | 'medium' | 'hard';
+  tags?: string[];
+}
+
+export interface SubmitAnswerForm {
+  content: string;
+  contentType: 'text' | 'latex' | 'html' | 'mixed';
+  score: number;
+}
+
+export interface LeaderboardEntry {
+  modelId: string;
+  modelName: string;
+  modelProvider: string;
+  modelColor: string;
+  categoryScores: {
+    categoryId: string;
+    categoryName: string;
+    averageScore: number;
+  }[];
+  totalScore: number;
+}

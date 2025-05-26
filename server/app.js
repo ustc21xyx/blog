@@ -10,6 +10,7 @@ const blogRoutes = require('./routes/blog');
 const userRoutes = require('./routes/user');
 const characterRoutes = require('./routes/character');
 const proxyRoutes = require('./routes/proxy');
+const evaluationRoutes = require('./routes/evaluation');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -158,6 +159,7 @@ app.use('/api/blog', blogRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/character', characterRoutes);
 app.use('/api/proxy', proxyRoutes);
+app.use('/api/evaluation', evaluationRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
