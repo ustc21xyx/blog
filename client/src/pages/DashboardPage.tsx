@@ -320,23 +320,49 @@ const DashboardPage = () => {
 
     setUpgrading(true);
     try {
-      // 使用配置好的api实例调用升级API，确保token正确传递
-      const response = await api.post('/user/upgrade-admin', {
-        upgradeCode: upgradeCode.trim()
-      }, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      // 直接从localStorage获取token，确保与zustand存储一致
+      const authStorage = localStorage.getItem('auth-storage');
+      let actualToken = token;
+      
+      if (authStorage) {
+        try {
+          const parsed = JSON.parse(authStorage);
+          actualToken = parsed?.state?.token || token;
+        } catch (e) {
+          console.error('Failed to parse auth storage:', e);
         }
+      }
+      
+      console.log('Using token:', actualToken ? 'Token exists' : 'No token'); // 调试用
+      
+      if (!actualToken) {
+        alert('❌ 请先登录！');
+        return;
+      }
+
+      // 使用fetch直接调用API，避免拦截器干扰
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${API_URL}/user/upgrade-admin`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${actualToken}`
+        },
+        body: JSON.stringify({ upgradeCode: upgradeCode.trim() })
       });
 
-      alert('🎉 恭喜！你已经成为管理员了！请重新登录以获取新权限。');
-      // 刷新用户信息
-      window.location.reload();
+      if (response.ok) {
+        alert('🎉 恭喜！你已经成为管理员了！请重新登录以获取新权限。');
+        // 刷新用户信息
+        window.location.reload();
+      } else {
+        const errorData = await response.json();
+        console.error('Server error:', errorData);
+        alert(`❌ 升级失败: ${errorData.message || '服务器错误'}`);
+      }
     } catch (error: any) {
       console.error('Upgrade error:', error);
-      console.log('Current token:', token); // 调试用
-      const errorMessage = error.response?.data?.message || '升级失败，请稍后重试';
-      alert(`❌ 升级失败: ${errorMessage}`);
+      alert(`❌ 升级失败: ${error.message || '网络错误'}`);
     } finally {
       setUpgrading(false);
       setUpgradeCode('');
