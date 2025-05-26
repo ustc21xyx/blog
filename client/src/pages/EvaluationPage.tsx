@@ -16,8 +16,8 @@ const EvaluationPage: React.FC = () => {
           evaluationApi.getCategories(),
           evaluationApi.getModels()
         ]);
-        setCategories(categoriesRes.categories);
-        setModels(modelsRes.models);
+        setCategories(categoriesRes.categories || []);
+        setModels(modelsRes.models || []);
       } catch (error) {
         console.error('Failed to fetch evaluation data:', error);
       } finally {
@@ -66,7 +66,7 @@ const EvaluationPage: React.FC = () => {
               </div>
               <div className="ml-4">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">评测分类</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{categories.length} 个分类</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{categories?.length || 0} 个分类</p>
               </div>
             </div>
           </div>
@@ -85,7 +85,7 @@ const EvaluationPage: React.FC = () => {
               </div>
               <div className="ml-4">
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white">AI模型</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{models.length} 个模型</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">{models?.length || 0} 个模型</p>
               </div>
             </div>
           </div>
