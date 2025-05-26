@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { evaluationApi } from '../utils/evaluationApi';
-import { LeaderboardEntry, EvaluationCategory } from '../types';
+import type { LeaderboardEntry, EvaluationCategory } from '../types';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Legend } from 'recharts';
 
 const LeaderboardPage: React.FC = () => {

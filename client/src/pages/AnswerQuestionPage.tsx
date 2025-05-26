@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { evaluationApi } from '../utils/evaluationApi';
-import { EvaluationQuestion, EvaluationModel, ModelAnswer, SubmitAnswerForm } from '../types';
+import type { EvaluationQuestion, EvaluationModel, ModelAnswer, SubmitAnswerForm } from '../types';
 import ContentRenderer from '../components/ContentRenderer';
 import Editor from '@monaco-editor/react';
 

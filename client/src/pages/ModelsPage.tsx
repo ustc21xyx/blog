@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { evaluationApi } from '../utils/evaluationApi';
-import { EvaluationModel, CreateModelForm } from '../types';
+import type { EvaluationModel, CreateModelForm } from '../types';
 import { useAuthStore } from '../store/authStore';
 
 const ModelsPage: React.FC = () => {

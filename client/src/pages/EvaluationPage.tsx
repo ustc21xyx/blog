@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { evaluationApi } from '../utils/evaluationApi';
-import { EvaluationCategory, EvaluationModel } from '../types';
+import type { EvaluationCategory, EvaluationModel } from '../types';
 
 const EvaluationPage: React.FC = () => {
   const navigate = useNavigate();
