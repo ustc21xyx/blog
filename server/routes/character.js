@@ -4,24 +4,26 @@ const cheerio = require('cheerio');
 
 const router = express.Router();
 
-// 萌娘百科角色页面列表
+// 萌娘百科角色页面列表 - 使用更准确的页面名称
 const moegirlCharacterPages = [
-  '鲁路修·Vi·不列颠尼亚',
+  '鲁路修',
   '夜神月', 
   '初音未来',
   '江户川柯南',
-  '孙悟空_(龙珠)',
+  '孙悟空',
   '桐间纱路',
-  '竈门炭治郎',
+  '灶门炭治郎',
   '比企谷八幡',
-  '艾米莉亚_(Re:从零开始的异世界生活)',
-  '蒙奇·D·路飞'
+  '艾米莉亚',
+  '路飞'
 ];
 
-// 从萌娘百科获取角色信息 - 改进的HTML解析方法（基于文档建议优化）
+// 从萌娘百科获取角色信息 - 修复的解析方法
 async function getCharacterFromMoegirl(characterName) {
   try {
     const encodedName = encodeURIComponent(characterName);
+    console.log(`[MOEGIRL] 开始爬取角色: ${characterName}`);
+    
     const response = await axios.get(`https://zh.moegirl.org.cn/${encodedName}`, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
@@ -32,94 +34,121 @@ async function getCharacterFromMoegirl(characterName) {
         'Connection': 'keep-alive',
         'Upgrade-Insecure-Requests': '1',
       },
-      timeout: 10000
+      timeout: 15000
     });
 
     const $ = cheerio.load(response.data);
     
-    // 获取角色名称
-    const name = $('#firstHeading').text().trim() || characterName;
+    // 获取角色名称 - 从title或h1获取
+    const pageTitle = $('title').text().replace(' - 萌娘百科 万物皆可萌的百科全书', '').trim();
+    const name = pageTitle || $('#firstHeading').text().trim() || $('h1').first().text().trim() || characterName;
+    console.log(`[MOEGIRL] 获取到角色名称: ${name}`);
     
-    // 获取角色图片
+    // 获取角色图片 - 查找多种可能的图片位置
     let image = '';
-    const infoboxImg = $('.infobox img').first().attr('src') || $('.thumb img').first().attr('src');
-    if (infoboxImg) {
-      if (infoboxImg.startsWith('//')) {
-        image = `https:${infoboxImg}`;
-      } else if (infoboxImg.startsWith('/')) {
-        image = `https://zh.moegirl.org.cn${infoboxImg}`;
-      } else if (infoboxImg.startsWith('http')) {
-        image = infoboxImg;
+    const imageSelectors = [
+      '.thumb img',
+      '.thumbinner img', 
+      '.wikitable img',
+      '.image img',
+      'img[src*="moegirl"]'
+    ];
+    
+    for (const selector of imageSelectors) {
+      const img = $(selector).first().attr('src');
+      if (img && !img.includes('svg') && !img.includes('icon')) {
+        if (img.startsWith('//')) {
+          image = `https:${img}`;
+        } else if (img.startsWith('/')) {
+          image = `https://zh.moegirl.org.cn${img}`;
+        } else if (img.startsWith('http')) {
+          image = img;
+        }
+        if (image) break;
       }
     }
+    console.log(`[MOEGIRL] 获取到图片: ${image || '无图片'}`);
     
-    // 获取角色描述 - 改进版本
+    // 获取角色描述 - 从第一个有效段落
     let description = '';
-    // 尝试多种选择器获取第一段描述
     const descriptionSelectors = [
-      '.mw-parser-output > p:first-of-type',
-      '#mw-content-text > div > p:first-of-type', 
-      '.mw-parser-output p:not(.infobox *)',
-      '#mw-content-text p'
+      '.mw-parser-output > p',
+      '#mw-content-text p',
+      '.mw-content-ltr p'
     ];
     
     for (const selector of descriptionSelectors) {
-      const element = $(selector).first();
-      if (element.length && element.text().trim().length > 20) {
-        description = element.text().trim();
-        break;
-      }
+      $(selector).each((i, p) => {
+        const text = $(p).text().trim();
+        if (text.length > 30 && !text.includes('编辑') && !text.includes('本页面') && !text.includes('萌娘百科')) {
+          description = text;
+          return false; // 跳出循环
+        }
+      });
+      if (description) break;
     }
+    console.log(`[MOEGIRL] 获取到描述长度: ${description.length}`);
     
-    // 改进的信息框解析 - 更精确地提取字段
-    const infoRows = $('.infobox tr');
+    // 解析信息表格 - 萌娘百科使用wikitable
     let originalName = '';
     let birthday = '';
     let height = '';
     let cv = '';
     let anime = [];
     
-    infoRows.each((i, row) => {
-      const $row = $(row);
-      const label = $row.find('th, .infobox-label').text().trim();
-      const value = $row.find('td, .infobox-data').text().trim();
-      
-      if (!label || !value) return;
-      
-      // 使用更精确的匹配规则
-      if (/(?:日文名|原名|本名|英文名)/i.test(label)) {
-        originalName = value;
-      } else if (/(?:生日|出生日期|出生|诞生)/i.test(label)) {
-        birthday = value;
-      } else if (/身高/i.test(label)) {
-        height = value;
-      } else if (/(?:声优|CV|配音|声优)/i.test(label)) {
-        cv = value;
-      } else if (/(?:出自|登场作品|作品|所属作品|来源)/i.test(label)) {
-        // 清理作品名称中的链接
-        const cleanValue = value.replace(/\s*\([^)]*\)\s*/g, '').trim();
-        if (cleanValue) anime.push(cleanValue);
-      }
-    });
-
-    // 如果没有找到作品信息，尝试从其他位置提取
-    if (anime.length === 0) {
-      const workLinks = $('.mw-parser-output a[title*="系列"], .mw-parser-output a[href*="作品"]');
-      workLinks.each((i, link) => {
-        if (i < 3) { // 最多取3个
-          const workName = $(link).text().trim();
-          if (workName.length > 2) anime.push(workName);
+    // 查找所有表格中的信息
+    $('.wikitable, table').each((i, table) => {
+      $(table).find('tr').each((j, row) => {
+        const $row = $(row);
+        const cells = $row.find('th, td');
+        
+        if (cells.length >= 2) {
+          const label = $(cells[0]).text().trim();
+          const value = $(cells[1]).text().trim();
+          
+          if (!label || !value) return;
+          
+          // 匹配各种字段
+          if (/(?:日文名|原名|本名|英文名|罗马音)/i.test(label)) {
+            originalName = value;
+          } else if (/(?:生日|出生日期|出生|诞生|发售日)/i.test(label)) {
+            birthday = value;
+          } else if (/(?:身高|高度)/i.test(label)) {
+            height = value;
+          } else if (/(?:声优|CV|配音|声源)/i.test(label)) {
+            cv = value;
+          } else if (/(?:出自|登场作品|作品|所属作品|来源|系列)/i.test(label)) {
+            const cleanValue = value.replace(/\s*\([^)]*\)\s*/g, '').trim();
+            if (cleanValue && cleanValue.length > 1) anime.push(cleanValue);
+          }
         }
       });
+    });
+    
+    // 如果没有找到作品信息，从链接中提取
+    if (anime.length === 0) {
+      $('a').each((i, link) => {
+        const href = $(link).attr('href') || '';
+        const text = $(link).text().trim();
+        if (text.length > 2 && text.length < 20 && 
+            (href.includes('系列') || href.includes('作品') || text.includes('系列'))) {
+          anime.push(text);
+        }
+      });
+      anime = anime.slice(0, 3); // 最多3个
     }
 
-    if (!name && !image) {
+    console.log(`[MOEGIRL] 解析结果 - 原名:${originalName}, 生日:${birthday}, 声优:${cv}, 作品:${anime.join(',')}`);
+
+    // 验证数据有效性 - 放宽验证条件
+    if (!name || (name === characterName && !originalName && !description)) {
+      console.log(`[MOEGIRL] 数据不完整，角色可能不存在`);
       return null;
     }
 
     return {
       id: `moe_${characterName}`,
-      name: name || characterName,
+      name: name,
       originalName: originalName || '',
       image: image || '',
       description: description || '暂无描述',
@@ -133,7 +162,7 @@ async function getCharacterFromMoegirl(characterName) {
       source: 'moegirl_enhanced'
     };
   } catch (error) {
-    console.error(`Error fetching character ${characterName} from Moegirl:`, error.message);
+    console.error(`[MOEGIRL] 爬取 ${characterName} 失败:`, error.message);
     return null;
   }
 }
@@ -483,8 +512,8 @@ router.get('/random', async (req, res) => {
   try {
     let character = null;
     
-    // 70% 概率使用萌娘百科爬虫，30% 概率使用 Bangumi 数据
-    if (Math.random() < 0.7) {
+    // 80% 概率使用萌娘百科爬虫，20% 概率使用 Bangumi 数据
+    if (Math.random() < 0.8) {
       // 使用萌娘百科爬虫获取实时数据
       let attempts = 0;
       while (!character && attempts < 3) {
@@ -515,8 +544,9 @@ router.get('/random', async (req, res) => {
       const randomIndex = Math.floor(Math.random() * moegiriCharacters.length);
       character = {
         ...moegiriCharacters[randomIndex],
-        source: 'moegirl_static'
+        source: 'moegirl_fallback'
       };
+      console.log(`[FALLBACK] 使用静态数据: ${character.name}`);
     }
     
     res.json({
@@ -530,7 +560,7 @@ router.get('/random', async (req, res) => {
     const randomIndex = Math.floor(Math.random() * moegiriCharacters.length);
     const character = {
       ...moegiriCharacters[randomIndex],
-      source: 'moegirl_static'
+      source: 'moegirl_fallback'
     };
     
     res.json({
