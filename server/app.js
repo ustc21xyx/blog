@@ -14,6 +14,8 @@ const proxyRoutes = require('./routes/proxy');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+console.log('[SERVER APP START] Attempting to load server/app.js in Vercel environment...');
+
 // Security middleware
 app.use(helmet());
 app.use(cors({
@@ -66,6 +68,8 @@ app.use((err, req, res, next) => {
 app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
+
+console.log('[SERVER APP DB] Attempting to connect to MongoDB. MONGODB_URI set:', !!process.env.MONGODB_URI);
 
 // Database connection
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/anime-blog', {
