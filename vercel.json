@@ -7,7 +7,12 @@
       "config": {
         "includeFiles": [
           "server/**",
-          "!server/uploads/**"
+          "!server/uploads/**",
+          "!server/node_modules/**"
+        ],
+        "excludeFiles": [
+          "server/uploads/**",
+          "server/node_modules/**"
         ]
       }
     },
@@ -15,7 +20,8 @@
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "client/dist"
+        "distDir": "client/dist",
+        "buildCommand": "cd client && npm install && npm run build"
       }
     }
   ],
@@ -23,5 +29,11 @@
     { "source": "/api/(.*)", "destination": "server/app.js" },
     { "source": "/uploads/(.*)", "destination": "server/app.js" },
     { "source": "/((?!api/|uploads/|.*\\.(?:css|js|png|jpg|jpeg|gif|svg|ico|json|txt|map|webmanifest)$).*)", "destination": "/index.html" }
-  ]
+  ],
+  "installCommand": "npm install && cd server && npm install && cd ../client && npm install",
+  "functions": {
+    "server/app.js": {
+      "maxDuration": 30
+    }
+  }
 }

@@ -7,14 +7,19 @@
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "server": "cd server && nodemon app.js",
     "client": "cd client && npm start",
-    "build": "cd client && npm run build",
+    "build": "cd client && npm install && npm run build",
     "start": "cd server && node app.js",
-    "install-all": "npm install && cd server && npm install && cd ../client && npm install"
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
+    "postinstall": "cd server && npm install && cd ../client && npm install"
   },
   "keywords": ["blog", "anime", "react", "express", "authentication"],
   "author": "",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   }
 }
