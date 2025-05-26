@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const cheerio = require('cheerio');
+const Character = require('../models/Character');
 
 const router = express.Router();
 
@@ -507,60 +508,176 @@ async function getCharacterFromBangumi(characterId) {
   }
 }
 
-// 获取随机角色
-router.get('/random', async (req, res) => {
+// 从数据库获取随机角色
+router.get('/random-db', async (req, res) => {
   try {
-    let character = null;
+    // 从数据库随机获取一个活跃角色
+    const characters = await Character.aggregate([
+      { $match: { isActive: true } },
+      { $sample: { size: 1 } }
+    ]);
     
-    // 80% 概率使用萌娘百科爬虫，20% 概率使用 Bangumi 数据
-    if (Math.random() < 0.8) {
-      // 使用萌娘百科爬虫获取实时数据
-      let attempts = 0;
-      while (!character && attempts < 3) {
-        const randomCharacterName = moegirlCharacterPages[Math.floor(Math.random() * moegirlCharacterPages.length)];
-        character = await getCharacterFromMoegirl(randomCharacterName);
-        attempts++;
-        
-        if (!character && attempts < 3) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+    if (characters.length > 0) {
+      const character = characters[0];
+      // 增加人气值
+      await Character.findByIdAndUpdate(character._id, { $inc: { popularity: 1 } });
+      
+      res.json({
+        success: true,
+        character: {
+          id: character._id,
+          name: character.name,
+          originalName: character.originalName,
+          image: character.image,
+          description: character.description,
+          anime: character.anime,
+          details: character.details,
+          source: character.source,
+          tags: character.tags,
+          popularity: character.popularity + 1
         }
-      }
+      });
     } else {
-      // 使用 Bangumi 数据作为备选
-      let attempts = 0;
-      while (!character && attempts < 3) {
-        const randomId = popularCharacterIds[Math.floor(Math.random() * popularCharacterIds.length)];
-        character = await getCharacterFromBangumi(randomId);
-        attempts++;
-        
-        if (!character && attempts < 3) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-        }
-      }
-    }
-    
-    // 如果都失败了，使用静态萌娘百科数据作为保底
-    if (!character) {
+      // 如果数据库中没有角色，回退到静态数据
       const randomIndex = Math.floor(Math.random() * moegiriCharacters.length);
-      character = {
+      const character = {
         ...moegiriCharacters[randomIndex],
-        source: 'moegirl_fallback'
+        source: 'static_fallback'
       };
-      console.log(`[FALLBACK] 使用静态数据: ${character.name}`);
+      
+      res.json({
+        success: true,
+        character
+      });
     }
+  } catch (error) {
+    console.error('Database random character error:', error);
+    
+    // 数据库错误时使用静态数据
+    const randomIndex = Math.floor(Math.random() * moegiriCharacters.length);
+    const character = {
+      ...moegiriCharacters[randomIndex],
+      source: 'error_fallback'
+    };
     
     res.json({
       success: true,
       character
     });
-  } catch (error) {
-    console.error('Random character error:', error);
+  }
+});
+
+// 获取热门角色列表
+router.get('/popular', async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 10;
+    const characters = await Character.find({ isActive: true })
+      .sort({ popularity: -1 })
+      .limit(limit)
+      .select('-__v -createdAt -updatedAt');
     
-    // 错误情况下返回静态萌娘百科数据
+    res.json({
+      success: true,
+      characters
+    });
+  } catch (error) {
+    console.error('Get popular characters error:', error);
+    res.status(500).json({
+      success: false,
+      message: '获取热门角色失败'
+    });
+  }
+});
+
+// 搜索角色
+router.get('/search', async (req, res) => {
+  try {
+    const query = req.query.q;
+    if (!query) {
+      return res.status(400).json({
+        success: false,
+        message: '请提供搜索关键词'
+      });
+    }
+    
+    const characters = await Character.find({
+      isActive: true,
+      $or: [
+        { name: { $regex: query, $options: 'i' } },
+        { originalName: { $regex: query, $options: 'i' } },
+        { description: { $regex: query, $options: 'i' } },
+        { anime: { $in: [new RegExp(query, 'i')] } }
+      ]
+    })
+    .limit(20)
+    .select('-__v -createdAt -updatedAt');
+    
+    res.json({
+      success: true,
+      characters
+    });
+  } catch (error) {
+    console.error('Search characters error:', error);
+    res.status(500).json({
+      success: false,
+      message: '搜索角色失败'
+    });
+  }
+});
+
+// 获取随机角色（已改为使用数据库，保持接口兼容性）
+router.get('/random', async (req, res) => {
+  try {
+    // 优先从数据库获取
+    const characters = await Character.aggregate([
+      { $match: { isActive: true } },
+      { $sample: { size: 1 } }
+    ]);
+    
+    if (characters.length > 0) {
+      const character = characters[0];
+      // 增加人气值
+      await Character.findByIdAndUpdate(character._id, { $inc: { popularity: 1 } });
+      
+      res.json({
+        success: true,
+        character: {
+          id: character._id,
+          name: character.name,
+          originalName: character.originalName,
+          image: character.image,
+          description: character.description,
+          anime: character.anime,
+          details: character.details,
+          source: character.source,
+          tags: character.tags,
+          popularity: character.popularity + 1
+        }
+      });
+      return;
+    }
+    
+    // 数据库为空时，回退到静态数据
+    console.log('[FALLBACK] 数据库无数据，使用静态数据');
     const randomIndex = Math.floor(Math.random() * moegiriCharacters.length);
     const character = {
       ...moegiriCharacters[randomIndex],
-      source: 'moegirl_fallback'
+      source: 'static_fallback'
+    };
+    
+    res.json({
+      success: true,
+      character
+    });
+    
+  } catch (error) {
+    console.error('Database random character error:', error);
+    
+    // 数据库错误时使用静态数据
+    const randomIndex = Math.floor(Math.random() * moegiriCharacters.length);
+    const character = {
+      ...moegiriCharacters[randomIndex],
+      source: 'error_fallback'
     };
     
     res.json({

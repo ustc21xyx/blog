@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "crawl-characters": "node scripts/crawl-characters.js"
   },
   "dependencies": {
     "axios": "^1.9.0",
