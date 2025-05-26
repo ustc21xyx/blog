@@ -4,10 +4,11 @@ import { PenTool, Eye, Heart, MessageCircle, BookOpen, Crown } from 'lucide-reac
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 import { blogApi } from '../utils/api';
+import api from '../utils/api';
 import type { BlogPost } from '../types';
 
 const DashboardPage = () => {
-  const { user } = useAuthStore();
+  const { user, token } = useAuthStore();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [stats, setStats] = useState({
     totalPosts: 0,
@@ -319,27 +320,23 @@ const DashboardPage = () => {
 
     setUpgrading(true);
     try {
-      // 调用升级API
-      const response = await fetch('/api/user/upgrade-admin', {
-        method: 'POST',
+      // 使用配置好的api实例调用升级API，确保token正确传递
+      const response = await api.post('/user/upgrade-admin', {
+        upgradeCode: upgradeCode.trim()
+      }, {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ upgradeCode: upgradeCode.trim() })
+          'Authorization': `Bearer ${token}`
+        }
       });
 
-      if (response.ok) {
-        alert('🎉 恭喜！你已经成为管理员了！请重新登录以获取新权限。');
-        // 刷新用户信息
-        window.location.reload();
-      } else {
-        const error = await response.json();
-        alert(`❌ 升级失败: ${error.message}`);
-      }
-    } catch (error) {
+      alert('🎉 恭喜！你已经成为管理员了！请重新登录以获取新权限。');
+      // 刷新用户信息
+      window.location.reload();
+    } catch (error: any) {
       console.error('Upgrade error:', error);
-      alert('❌ 升级失败，请稍后重试');
+      console.log('Current token:', token); // 调试用
+      const errorMessage = error.response?.data?.message || '升级失败，请稍后重试';
+      alert(`❌ 升级失败: ${errorMessage}`);
     } finally {
       setUpgrading(false);
       setUpgradeCode('');
