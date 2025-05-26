@@ -36,14 +36,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('uploads'));
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/blog', blogRoutes);
-app.use('/api/user', userRoutes);
-app.use('/api/character', characterRoutes);
-app.use('/api/proxy', proxyRoutes);
+app.use('/auth', authRoutes);
+app.use('/blog', blogRoutes);
+app.use('/user', userRoutes);
+app.use('/character', characterRoutes);
+app.use('/proxy', proxyRoutes);
 
 // Health check
-app.get('/api/health', (req, res) => {
+app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
