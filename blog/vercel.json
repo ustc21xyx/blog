@@ -12,10 +12,10 @@
       }
     },
     {
-      "src": "package.json",
+      "src": "client/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "client/dist"
+        "distDir": "dist"
       }
     }
   ],
@@ -24,4 +24,4 @@
     { "source": "/uploads/(.*)", "destination": "server/app.js" },
     { "source": "/((?!api/|uploads/|.*\\.(?:css|js|png|jpg|jpeg|gif|svg|ico|json|txt|map|webmanifest)$).*)", "destination": "/index.html" }
   ]
-}
+} 
