@@ -18,8 +18,129 @@ const moegirlCharacterPages = [
   '蒙奇·D·路飞'
 ];
 
-// 从萌娘百科获取角色信息
+// 从萌娘百科获取角色信息 - 改进的HTML解析方法（基于文档建议优化）
 async function getCharacterFromMoegirl(characterName) {
+  try {
+    const encodedName = encodeURIComponent(characterName);
+    const response = await axios.get(`https://zh.moegirl.org.cn/${encodedName}`, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+      },
+      timeout: 10000
+    });
+
+    const $ = cheerio.load(response.data);
+    
+    // 获取角色名称
+    const name = $('#firstHeading').text().trim() || characterName;
+    
+    // 获取角色图片
+    let image = '';
+    const infoboxImg = $('.infobox img').first().attr('src') || $('.thumb img').first().attr('src');
+    if (infoboxImg) {
+      if (infoboxImg.startsWith('//')) {
+        image = `https:${infoboxImg}`;
+      } else if (infoboxImg.startsWith('/')) {
+        image = `https://zh.moegirl.org.cn${infoboxImg}`;
+      } else if (infoboxImg.startsWith('http')) {
+        image = infoboxImg;
+      }
+    }
+    
+    // 获取角色描述 - 改进版本
+    let description = '';
+    // 尝试多种选择器获取第一段描述
+    const descriptionSelectors = [
+      '.mw-parser-output > p:first-of-type',
+      '#mw-content-text > div > p:first-of-type', 
+      '.mw-parser-output p:not(.infobox *)',
+      '#mw-content-text p'
+    ];
+    
+    for (const selector of descriptionSelectors) {
+      const element = $(selector).first();
+      if (element.length && element.text().trim().length > 20) {
+        description = element.text().trim();
+        break;
+      }
+    }
+    
+    // 改进的信息框解析 - 更精确地提取字段
+    const infoRows = $('.infobox tr');
+    let originalName = '';
+    let birthday = '';
+    let height = '';
+    let cv = '';
+    let anime = [];
+    
+    infoRows.each((i, row) => {
+      const $row = $(row);
+      const label = $row.find('th, .infobox-label').text().trim();
+      const value = $row.find('td, .infobox-data').text().trim();
+      
+      if (!label || !value) return;
+      
+      // 使用更精确的匹配规则
+      if (/(?:日文名|原名|本名|英文名)/i.test(label)) {
+        originalName = value;
+      } else if (/(?:生日|出生日期|出生|诞生)/i.test(label)) {
+        birthday = value;
+      } else if (/身高/i.test(label)) {
+        height = value;
+      } else if (/(?:声优|CV|配音|声优)/i.test(label)) {
+        cv = value;
+      } else if (/(?:出自|登场作品|作品|所属作品|来源)/i.test(label)) {
+        // 清理作品名称中的链接
+        const cleanValue = value.replace(/\s*\([^)]*\)\s*/g, '').trim();
+        if (cleanValue) anime.push(cleanValue);
+      }
+    });
+
+    // 如果没有找到作品信息，尝试从其他位置提取
+    if (anime.length === 0) {
+      const workLinks = $('.mw-parser-output a[title*="系列"], .mw-parser-output a[href*="作品"]');
+      workLinks.each((i, link) => {
+        if (i < 3) { // 最多取3个
+          const workName = $(link).text().trim();
+          if (workName.length > 2) anime.push(workName);
+        }
+      });
+    }
+
+    if (!name && !image) {
+      return null;
+    }
+
+    return {
+      id: `moe_${characterName}`,
+      name: name || characterName,
+      originalName: originalName || '',
+      image: image || '',
+      description: description || '暂无描述',
+      anime: anime.length > 0 ? anime : ['未知作品'],
+      details: {
+        birthday: birthday || '未知',
+        height: height || '未知',
+        weight: '未知',
+        cv: cv || '未知'
+      },
+      source: 'moegirl_enhanced'
+    };
+  } catch (error) {
+    console.error(`Error fetching character ${characterName} from Moegirl:`, error.message);
+    return null;
+  }
+}
+
+
+// HTML解析方法作为备选（保持原有逻辑）
+async function getCharacterFromMoegirlHTML(characterName) {
   try {
     const encodedName = encodeURIComponent(characterName);
     const response = await axios.get(`https://zh.moegirl.org.cn/${encodedName}`, {
@@ -99,13 +220,14 @@ async function getCharacterFromMoegirl(characterName) {
         weight: '未知',
         cv: cv || '未知'
       },
-      source: 'moegirl'
+      source: 'moegirl_html'
     };
   } catch (error) {
     console.error(`Error fetching character ${characterName} from Moegirl:`, error.message);
     return null;
   }
 }
+
 
 // 生成角色占位符图片
 function generateCharacterImage(name, seed) {
