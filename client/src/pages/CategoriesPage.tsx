@@ -24,7 +24,11 @@ const CategoriesPage: React.FC = () => {
   const fetchCategories = async () => {
     try {
       const response = await evaluationApi.getCategories();
-      setCategories(response.categories || []);
+      console.log('Fetched categories response:', response); // 调试日志
+      // API响应在 response.data 中
+      const categories = response.data?.categories || response.categories || [];
+      console.log('Categories data:', categories); // 调试日志
+      setCategories(categories);
     } catch (error) {
       console.error('Failed to fetch categories:', error);
     } finally {

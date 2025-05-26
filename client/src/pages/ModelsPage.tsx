@@ -26,7 +26,11 @@ const ModelsPage: React.FC = () => {
   const fetchModels = async () => {
     try {
       const response = await evaluationApi.getModels();
-      setModels(response.models || []);
+      console.log('Fetched models response:', response); // 调试日志
+      // API响应在 response.data 中
+      const models = response.data?.models || response.models || [];
+      console.log('Models data:', models); // 调试日志
+      setModels(models);
     } catch (error) {
       console.error('Failed to fetch models:', error);
     } finally {
