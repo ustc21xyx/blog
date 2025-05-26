@@ -1,0 +1,390 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Nunito:wght@400;600;700;800&family=Noto+Sans+SC:wght@300;400;500;600;700&family=Comic+Neue:wght@300;400;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-gray-200 dark:border-gray-700;
+  }
+  
+  body {
+    @apply bg-white dark:bg-dark-bg text-gray-900 dark:text-white font-anime;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .anime-gradient {
+    @apply bg-gradient-to-r from-anime-purple-500 via-anime-pink-500 to-anime-blue-500;
+  }
+  
+  .anime-gradient-text {
+    @apply bg-gradient-to-r from-anime-purple-500 via-anime-pink-500 to-anime-blue-500 bg-clip-text text-transparent;
+  }
+  
+  .anime-card {
+    @apply bg-white dark:bg-dark-card border border-gray-200 dark:border-dark-border rounded-xl shadow-lg dark:shadow-2xl backdrop-blur-sm;
+  }
+  
+  .anime-button {
+    @apply px-6 py-3 rounded-lg font-medium transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-opacity-50;
+  }
+  
+  .anime-button-primary {
+    @apply anime-button bg-gradient-to-r from-anime-purple-600 to-anime-pink-600 text-white hover:from-anime-purple-700 hover:to-anime-pink-700 focus:ring-anime-purple-500 shadow-lg hover:shadow-xl;
+  }
+  
+  .anime-button-secondary {
+    @apply anime-button bg-gray-100 dark:bg-dark-card text-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 focus:ring-gray-300;
+  }
+  
+  .anime-input {
+    @apply w-full px-4 py-3 border border-gray-300 dark:border-dark-border rounded-lg bg-white dark:bg-dark-card text-gray-900 dark:text-white focus:ring-2 focus:ring-anime-purple-500 focus:border-transparent transition-colors duration-200;
+  }
+  
+  .anime-nav {
+    @apply bg-white/80 dark:bg-dark-card/80 backdrop-blur-md border-b border-gray-200 dark:border-dark-border sticky top-0 z-50;
+  }
+  
+  .floating-element {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .glow-effect {
+    @apply transition-all duration-300;
+  }
+  
+  .glow-effect:hover {
+    filter: drop-shadow(0 0 10px rgba(160, 113, 255, 0.5));
+  }
+  
+  .anime-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #a071ff #1a1a2e;
+  }
+  
+  .anime-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .anime-scrollbar::-webkit-scrollbar-track {
+    @apply bg-gray-100 dark:bg-dark-card;
+  }
+  
+  .anime-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-anime-purple-500 rounded-full;
+  }
+  
+  .anime-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-anime-purple-600;
+  }
+  
+  .blog-content {
+    @apply max-w-none;
+  }
+  
+  .blog-content h1,
+  .blog-content h2,
+  .blog-content h3 {
+    @apply font-heading;
+  }
+  
+  .blog-content h1 {
+    @apply text-3xl font-bold mb-6 anime-gradient-text;
+  }
+  
+  .blog-content h2 {
+    @apply text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-200;
+  }
+  
+  .blog-content h3 {
+    @apply text-xl font-medium mb-3 text-gray-700 dark:text-gray-300;
+  }
+  
+  .blog-content p {
+    @apply mb-4 leading-relaxed text-gray-600 dark:text-gray-300;
+  }
+  
+  .blog-content a {
+    @apply text-anime-purple-600 hover:text-anime-pink-600 transition-colors duration-200;
+  }
+  
+  .blog-content blockquote {
+    @apply border-l-4 border-anime-purple-500 pl-4 italic text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-dark-card p-4 rounded-r-lg;
+  }
+  
+  .blog-content code {
+    @apply bg-gray-100 dark:bg-dark-card px-2 py-1 rounded text-sm font-mono text-anime-purple-600 dark:text-anime-purple-400;
+  }
+  
+  .blog-content pre {
+    @apply bg-gray-900 dark:bg-black p-4 rounded-lg overflow-x-auto;
+  }
+  
+  .blog-content pre code {
+    @apply bg-transparent p-0 text-gray-100;
+  }
+  
+  .tag {
+    @apply inline-block px-3 py-1 text-xs font-medium bg-anime-purple-100 dark:bg-anime-purple-900 text-anime-purple-800 dark:text-anime-purple-200 rounded-full mr-2 mb-2 hover:bg-anime-purple-200 dark:hover:bg-anime-purple-800 transition-colors duration-200 cursor-pointer;
+  }
+  
+  .category-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+  
+  .category-anime-review {
+    @apply bg-anime-pink-100 text-anime-pink-800 dark:bg-anime-pink-900 dark:text-anime-pink-200;
+  }
+  
+  .category-manga-review {
+    @apply bg-anime-purple-100 text-anime-purple-800 dark:bg-anime-purple-900 dark:text-anime-purple-200;
+  }
+  
+  .category-news {
+    @apply bg-anime-blue-100 text-anime-blue-800 dark:bg-anime-blue-900 dark:text-anime-blue-200;
+  }
+  
+  .category-opinion {
+    @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200;
+  }
+  
+  .category-tutorial {
+    @apply bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200;
+  }
+  
+  .category-other {
+    @apply bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200;
+  }
+
+  /* 二次元特效样式 */
+  .kawaii-card {
+    background: linear-gradient(135deg, #fdf2f8 0%, #faf5ff 100%);
+    border-radius: 20px;
+    box-shadow: 0 4px 6px -1px rgba(244, 63, 94, 0.1), 0 2px 4px -1px rgba(244, 63, 94, 0.06);
+    border: 2px solid #fce7f3;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+  }
+
+  .kawaii-card:hover {
+    box-shadow: 0 0 20px rgba(244, 63, 94, 0.3);
+    transform: scale(1.05);
+  }
+
+  .dark .kawaii-card {
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    border-color: #581c87;
+  }
+
+  .anime-sparkle {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .anime-sparkle::before {
+    content: '✨';
+    position: absolute;
+    top: 10%;
+    right: 10%;
+    font-size: 1.2em;
+    animation: sparkle 2s ease-in-out infinite;
+    opacity: 0.7;
+  }
+
+  .anime-sparkle::after {
+    content: '⭐';
+    position: absolute;
+    bottom: 10%;
+    left: 10%;
+    font-size: 0.8em;
+    animation: sparkle 2s ease-in-out infinite 0.5s;
+    opacity: 0.6;
+  }
+
+  .kawaii-button {
+    padding: 0.75rem 1.5rem;
+    border-radius: 20px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    transform: scale(1);
+    outline: none;
+    box-shadow: 0 4px 6px -1px rgba(244, 63, 94, 0.1), 0 2px 4px -1px rgba(244, 63, 94, 0.06);
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+    color: white;
+  }
+
+  .kawaii-button:hover {
+    box-shadow: 0 0 20px rgba(244, 63, 94, 0.4);
+    transform: translateY(-2px) scale(1.05);
+  }
+
+  .kawaii-button:focus {
+    outline: 2px solid rgba(244, 63, 94, 0.5);
+    outline-offset: 2px;
+  }
+
+  .kawaii-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+  }
+
+  .kawaii-button:hover::before {
+    left: 100%;
+  }
+
+  .anime-text-glow {
+    text-shadow: 0 0 10px rgba(160, 113, 255, 0.5), 0 0 20px rgba(160, 113, 255, 0.3), 0 0 30px rgba(160, 113, 255, 0.1);
+  }
+
+  .floating-hearts {
+    position: relative;
+  }
+
+  .floating-hearts::before,
+  .floating-hearts::after {
+    content: '💖';
+    position: absolute;
+    font-size: 1.5em;
+    opacity: 0.3;
+    pointer-events: none;
+    animation: float 4s ease-in-out infinite;
+  }
+
+  .floating-hearts::before {
+    top: -10px;
+    right: -10px;
+    animation-delay: 0s;
+  }
+
+  .floating-hearts::after {
+    bottom: -10px;
+    left: -10px;
+    animation-delay: 2s;
+  }
+
+  .anime-gradient-border {
+    position: relative;
+    background: linear-gradient(white, white) padding-box,
+                linear-gradient(135deg, #ff9a9e, #fecfef, #667eea) border-box;
+    border: 2px solid transparent;
+    border-radius: 20px;
+  }
+
+  .dark .anime-gradient-border {
+    background: linear-gradient(#1a1a2e, #1a1a2e) padding-box,
+                linear-gradient(135deg, #ff9a9e, #fecfef, #667eea) border-box;
+  }
+
+  .cute-emoji {
+    display: inline-block;
+    animation: wiggle 2s ease-in-out infinite;
+  }
+
+  .bounce-in {
+    animation: bounceIn 0.6s ease-out;
+  }
+
+  @keyframes bounceIn {
+    0% {
+      transform: scale(0.3);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    70% {
+      transform: scale(0.9);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  .pulse-ring {
+    position: relative;
+  }
+
+  .pulse-ring::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    border: 2px solid rgba(160, 113, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: pulse-ring 2s ease-out infinite;
+  }
+
+  @keyframes pulse-ring {
+    0% {
+      transform: translate(-50%, -50%) scale(0.8);
+      opacity: 1;
+    }
+    100% {
+      transform: translate(-50%, -50%) scale(2);
+      opacity: 0;
+    }
+  }
+
+  .typing-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .typing-indicator span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #a071ff;
+    animation: typing 1.4s ease-in-out infinite;
+  }
+
+  .typing-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .typing-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+  @keyframes typing {
+    0%, 60%, 100% {
+      transform: translateY(0);
+      opacity: 0.5;
+    }
+    30% {
+      transform: translateY(-10px);
+      opacity: 1;
+    }
+  }
+
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  .dark .glass-effect {
+    background: rgba(26, 26, 46, 0.3);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(45, 45, 68, 0.5);
+  }
+}

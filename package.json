@@ -1,0 +1,20 @@
+{
+  "name": "anime-blog",
+  "version": "1.0.0",
+  "description": "Modern anime-style blog with authentication",
+  "main": "server/app.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && nodemon app.js",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "start": "cd server && node app.js",
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install"
+  },
+  "keywords": ["blog", "anime", "react", "express", "authentication"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

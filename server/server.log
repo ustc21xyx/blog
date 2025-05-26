@@ -1,0 +1,6 @@
+
+> anime-blog-server@1.0.0 start
+> node app.js
+
+🎌 Connected to MongoDB
+🚀 Server running on port 5000
