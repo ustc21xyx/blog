@@ -10,6 +10,13 @@
           "!server/uploads/**"
         ]
       }
+    },
+    {
+      "src": "client/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
     }
   ],
   "routes": [
@@ -20,6 +27,10 @@
     {
       "src": "/uploads/(.*)",
       "dest": "server/app.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/client/dist/index.html"
     }
   ]
 } 
