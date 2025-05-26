@@ -33,9 +33,12 @@ const AnswerQuestionPage: React.FC = () => {
         evaluationApi.getModels(),
         evaluationApi.getAnswers({ question: questionId })
       ]);
-      setQuestion(questionRes);
-      setModels(modelsRes.models);
-      setAnswers(answersRes.answers);
+      console.log('AnswerQuestionPage - questionRes:', questionRes);
+      console.log('AnswerQuestionPage - modelsRes:', modelsRes);
+      console.log('AnswerQuestionPage - answersRes:', answersRes);
+      setQuestion(questionRes.data?.question || questionRes.question || questionRes);
+      setModels(modelsRes.data?.models || modelsRes.models || []);
+      setAnswers(answersRes.data?.answers || answersRes.answers || []);
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {

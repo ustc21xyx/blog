@@ -39,8 +39,17 @@ const QuestionsPage: React.FC = () => {
         }),
         evaluationApi.getCategories()
       ]);
-      setQuestions(questionsRes.questions || []);
-      setCategories(categoriesRes.categories || []);
+      console.log('Questions page - questions response:', questionsRes);
+      console.log('Questions page - categories response:', categoriesRes);
+      
+      const questions = questionsRes.data?.questions || questionsRes.questions || [];
+      const categories = categoriesRes.data?.categories || categoriesRes.categories || [];
+      
+      console.log('Questions page - parsed questions:', questions);
+      console.log('Questions page - parsed categories:', categories);
+      
+      setQuestions(questions);
+      setCategories(categories);
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {

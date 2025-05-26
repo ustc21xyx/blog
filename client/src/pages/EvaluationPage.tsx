@@ -16,8 +16,17 @@ const EvaluationPage: React.FC = () => {
           evaluationApi.getCategories(),
           evaluationApi.getModels()
         ]);
-        setCategories(categoriesRes.categories || []);
-        setModels(modelsRes.models || []);
+        console.log('Evaluation page - categories response:', categoriesRes);
+        console.log('Evaluation page - models response:', modelsRes);
+        
+        const categories = categoriesRes.data?.categories || categoriesRes.categories || [];
+        const models = modelsRes.data?.models || modelsRes.models || [];
+        
+        console.log('Evaluation page - parsed categories:', categories);
+        console.log('Evaluation page - parsed models:', models);
+        
+        setCategories(categories);
+        setModels(models);
       } catch (error) {
         console.error('Failed to fetch evaluation data:', error);
       } finally {

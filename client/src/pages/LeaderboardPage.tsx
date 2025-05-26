@@ -21,12 +21,15 @@ const LeaderboardPage: React.FC = () => {
         evaluationApi.getLeaderboard(),
         evaluationApi.getCategories()
       ]);
-      setLeaderboard(leaderboardRes.leaderboard || []);
-      setCategories(categoriesRes.categories || []);
+      console.log('LeaderboardPage - leaderboardRes:', leaderboardRes);
+      console.log('LeaderboardPage - categoriesRes:', categoriesRes);
+      setLeaderboard(leaderboardRes.data?.leaderboard || leaderboardRes.leaderboard || []);
+      setCategories(categoriesRes.data?.categories || categoriesRes.categories || []);
       
       // 默认选中前5个模型用于雷达图
-      if (leaderboardRes.leaderboard?.length > 0) {
-        setSelectedModels((leaderboardRes.leaderboard || []).slice(0, 5).map(entry => entry.modelId));
+      const leaderboard = leaderboardRes.data?.leaderboard || leaderboardRes.leaderboard || [];
+      if (leaderboard.length > 0) {
+        setSelectedModels(leaderboard.slice(0, 5).map(entry => entry.modelId));
       }
     } catch (error) {
       console.error('Failed to fetch leaderboard:', error);
