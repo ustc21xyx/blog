@@ -8,6 +8,15 @@ const router = express.Router();
 // Get all published blog posts (with pagination)
 router.get('/', optionalAuth, async (req, res) => {
   try {
+    // Check database connection
+    if (require('mongoose').connection.readyState !== 1) {
+      console.error('[BLOG API] Database not connected');
+      return res.status(503).json({ 
+        message: 'Database connection unavailable',
+        error: 'Service temporarily unavailable'
+      });
+    }
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
@@ -47,7 +56,10 @@ router.get('/', optionalAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Get posts error:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ 
+      message: 'Failed to fetch posts',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 });
 

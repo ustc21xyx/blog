@@ -32,19 +32,7 @@ app.use(limiter);
 
 // Middleware to log request details
 app.use((req, res, next) => {
-  console.log(`[REQ LOG] Method: ${req.method}, URL: ${req.url}, OriginalURL: ${req.originalUrl}, BaseURL: ${req.baseUrl}`);
-  next();
-});
-
-// Middleware to check database connection
-app.use('/api', (req, res, next) => {
-  if (mongoose.connection.readyState !== 1) {
-    console.error('[DB CHECK] Database not connected. ReadyState:', mongoose.connection.readyState);
-    return res.status(503).json({ 
-      message: 'Database connection unavailable',
-      error: 'Please check database configuration'
-    });
-  }
+  console.log(`[REQ LOG] Method: ${req.method}, URL: ${req.url}`);
   next();
 });
 
@@ -55,6 +43,81 @@ app.use(express.urlencoded({ extended: true }));
 // Static files
 app.use('/uploads', express.static('uploads'));
 
+// Health check (before database check)
+app.get('/api/health', (req, res) => {
+  const dbState = mongoose.connection.readyState;
+  const dbStatus = dbState === 1 ? 'connected' : dbState === 2 ? 'connecting' : 'disconnected';
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    database: dbStatus,
+    env: process.env.NODE_ENV
+  });
+});
+
+// Database connection setup
+let isConnecting = false;
+const connectDB = async () => {
+  if (isConnecting) return;
+  isConnecting = true;
+  
+  try {
+    let mongoURI = process.env.MONGODB_URI || process.env.MONGO_URI;
+    
+    // Fix the MongoDB URI by adding database name if missing
+    if (mongoURI && mongoURI.includes('mongodb.net') && !mongoURI.includes('/anime-blog')) {
+      mongoURI = mongoURI.replace('/?', '/anime-blog?');
+    }
+    
+    if (!mongoURI) {
+      mongoURI = 'mongodb://localhost:27017/anime-blog';
+    }
+    
+    console.log('[DB] Connecting to MongoDB...');
+    console.log('[DB] URI type:', mongoURI.includes('mongodb.net') ? 'MongoDB Atlas' : 'Local MongoDB');
+    
+    await mongoose.connect(mongoURI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 15000,
+      connectTimeoutMS: 15000,
+      maxPoolSize: 5,
+      socketTimeoutMS: 45000,
+      bufferCommands: false,
+      bufferMaxEntries: 0
+    });
+    
+    console.log('🎌 Connected to MongoDB successfully');
+    isConnecting = false;
+    
+  } catch (err) {
+    console.error('❌ Database connection error:', err.message);
+    isConnecting = false;
+    
+    // Retry connection after 5 seconds
+    setTimeout(() => {
+      console.log('[DB] Retrying connection...');
+      connectDB();
+    }, 5000);
+  }
+};
+
+// Handle MongoDB connection events
+mongoose.connection.on('error', (err) => {
+  console.error('MongoDB connection error:', err.message);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('MongoDB disconnected, attempting to reconnect...');
+  if (!isConnecting) {
+    connectDB();
+  }
+});
+
+mongoose.connection.on('connected', () => {
+  console.log('MongoDB connected successfully');
+});
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/blog', blogRoutes);
@@ -62,17 +125,12 @@ app.use('/api/user', userRoutes);
 app.use('/api/character', characterRoutes);
 app.use('/api/proxy', proxyRoutes);
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
-
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('[ERROR]', err.stack);
   res.status(500).json({ 
     message: 'Something went wrong!',
-    error: process.env.NODE_ENV === 'development' ? err.message : {}
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
   });
 });
 
@@ -81,54 +139,14 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-console.log('[SERVER APP DB] Attempting to connect to MongoDB. MONGODB_URI set:', !!process.env.MONGODB_URI);
-
-// Database connection with better error handling
-const connectDB = async () => {
-  try {
-    const mongoURI = process.env.MONGODB_URI || process.env.MONGO_URI || 'mongodb://localhost:27017/anime-blog';
-    console.log('[DB] Connecting to:', mongoURI.includes('mongodb.net') ? 'MongoDB Atlas' : 'Local MongoDB');
-    
-    await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 10000, // 10 seconds timeout
-      maxPoolSize: 10, // Maintain up to 10 socket connections
-      socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-      bufferCommands: false, // Disable mongoose buffering
-      bufferMaxEntries: 0 // Disable mongoose buffering
-    });
-    
-    console.log('🎌 Connected to MongoDB successfully');
-    
-    // Only start server if in development or if this is the main module
-    if (process.env.NODE_ENV !== 'production' || require.main === module) {
-      app.listen(PORT, () => {
-        console.log(`🚀 Server running on port ${PORT}`);
-      });
-    }
-  } catch (err) {
-    console.error('❌ Database connection error:', err);
-    
-    // In production (Vercel), don't exit process - let the request handler show error
-    if (process.env.NODE_ENV === 'production') {
-      console.log('[PROD] Database connection failed, continuing without DB...');
-    } else {
-      process.exit(1);
-    }
-  }
-};
-
-// Handle MongoDB connection errors after initial connection
-mongoose.connection.on('error', (err) => {
-  console.error('MongoDB connection error:', err);
-});
-
-mongoose.connection.on('disconnected', () => {
-  console.log('MongoDB disconnected');
-});
-
-// Connect to database
+// Initialize database connection
 connectDB();
+
+// Start server in development
+if (process.env.NODE_ENV !== 'production' || require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+  });
+}
 
 module.exports = app;

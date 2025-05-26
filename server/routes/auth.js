@@ -3,8 +3,21 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
+const mongoose = require('mongoose');
 
 const router = express.Router();
+
+// Middleware to check database connection for auth routes
+router.use((req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    console.error('[AUTH API] Database not connected');
+    return res.status(503).json({ 
+      message: 'Database connection unavailable',
+      error: 'Authentication service temporarily unavailable'
+    });
+  }
+  next();
+});
 
 const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET || 'anime-blog-secret-key', {
@@ -76,7 +89,10 @@ router.post('/register', [
     });
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).json({ message: 'Server error during registration' });
+    res.status(500).json({ 
+      message: 'Registration failed',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 });
 
@@ -128,7 +144,10 @@ router.post('/login', [
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ message: 'Server error during login' });
+    res.status(500).json({ 
+      message: 'Login failed',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 });
 
