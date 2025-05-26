@@ -42,7 +42,7 @@ const HomePage = () => {
       'tutorial': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
       'other': 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
     };
-    return colors[category] || colors.other;
+    return colors[category as keyof typeof colors] || colors.other;
   };
 
   const getCategoryLabel = (category: string) => {
@@ -54,7 +54,7 @@ const HomePage = () => {
       'tutorial': 'Tutorial',
       'other': 'Other',
     };
-    return labels[category] || 'Other';
+    return labels[category as keyof typeof labels] || 'Other';
   };
 
   if (loading) {

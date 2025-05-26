@@ -8,7 +8,6 @@ import { useAuthStore } from '../store/authStore';
 import { userApi } from '../utils/api';
 import { getAvatarUrl } from '../utils/avatarUtils';
 import AvatarUpload from '../components/AvatarUpload';
-import type { User } from '../types';
 
 interface ProfileForm {
   displayName: string;

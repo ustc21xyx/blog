@@ -95,7 +95,7 @@ const Navbar = () => {
                       {getAvatarUrl(user?.avatar) ? (
                         <img
                           src={getAvatarUrl(user?.avatar)}
-                          alt={user.displayName}
+                          alt={user?.displayName}
                           className="w-8 h-8 rounded-full object-cover border-2 border-white"
                         />
                       ) : (
