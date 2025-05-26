@@ -163,6 +163,28 @@ router.post('/', auth, [
   }
 });
 
+// Get single blog post by ID for editing
+router.get('/edit/:id', auth, async (req, res) => {
+  try {
+    const post = await BlogPost.findById(req.params.id)
+      .populate('author', 'username displayName avatar');
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Check if user owns the post or is admin
+    if (post.author._id.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized to edit this post' });
+    }
+
+    res.json(post);
+  } catch (error) {
+    console.error('Get post for editing error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Update blog post
 router.put('/:id', auth, [
   param('id').isMongoId().withMessage('Invalid post ID'),

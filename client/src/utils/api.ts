@@ -53,6 +53,8 @@ export const blogApi = {
   
   getPost: (slug: string) => api.get(`/blog/${slug}`),
   
+  getPostForEdit: (id: string) => api.get(`/blog/edit/${id}`),
+  
   createPost: (data: CreatePostForm) => api.post('/blog', data),
   
   updatePost: (id: string, data: Partial<CreatePostForm>) => 

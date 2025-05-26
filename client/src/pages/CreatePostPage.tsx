@@ -11,12 +11,14 @@ const CreatePostPage = () => {
   const { id } = useParams<{ id: string }>();
   const [isPreview, setIsPreview] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingPost, setLoadingPost] = useState(false);
   const navigate = useNavigate();
 
   const {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<CreatePostForm>({
     defaultValues: {
@@ -38,15 +40,42 @@ const CreatePostPage = () => {
 
   const fetchPost = async () => {
     try {
-      // This would need to be implemented to fetch by ID
-      // const response = await blogApi.getPostById(id!);
-      // const post = response.data;
-      // setValue('title', post.title);
-      // setValue('content', post.content);
-      // etc...
-    } catch (error) {
-      toast.error('Failed to load post');
+      setLoadingPost(true);
+      console.log('Fetching post for editing:', id);
+      const response = await blogApi.getPostForEdit(id!);
+      const post = response.data;
+      
+      console.log('Loaded post data:', post);
+      
+      // Pre-fill all form fields
+      setValue('title', post.title || '');
+      setValue('content', post.content || '');
+      setValue('excerpt', post.excerpt || '');
+      setValue('category', post.category || 'other');
+      setValue('featuredImage', post.featuredImage || '');
+      setValue('isPublished', post.isPublished || false);
+      
+      // Handle tags array
+      if (post.tags && Array.isArray(post.tags)) {
+        setValue('tags', post.tags.join(', '));
+      }
+      
+      // Handle anime related data
+      if (post.animeRelated) {
+        setValue('animeRelated.title', post.animeRelated.title || '');
+        setValue('animeRelated.rating', post.animeRelated.rating || 0);
+        if (post.animeRelated.genre && Array.isArray(post.animeRelated.genre)) {
+          setValue('animeRelated.genre', post.animeRelated.genre.join(', '));
+        }
+      }
+      
+      toast.success('Post loaded for editing');
+    } catch (error: any) {
+      console.error('Failed to load post:', error);
+      toast.error(error.response?.data?.message || 'Failed to load post');
       navigate('/blog');
+    } finally {
+      setLoadingPost(false);
     }
   };
 
@@ -106,6 +135,18 @@ const CreatePostPage = () => {
     { value: 'tutorial', label: 'Tutorial' },
     { value: 'other', label: 'Other' },
   ];
+
+  // Show loading state while fetching post data
+  if (loadingPost) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-dark-bg flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-anime-purple-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading post for editing...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-dark-bg">
