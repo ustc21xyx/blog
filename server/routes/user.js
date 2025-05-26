@@ -3,7 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
-const { auth } = require('../middleware/auth');
+const { auth, adminAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -212,6 +212,92 @@ router.get('/', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Get users error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ========== 管理员管理 API ==========
+
+// 提升用户为管理员 (仅管理员)
+router.put('/:userId/promote', adminAuth, async (req, res) => {
+  try {
+    if (req.user._id.toString() === req.params.userId) {
+      return res.status(400).json({ message: 'Cannot modify your own role' });
+    }
+
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.role === 'admin') {
+      return res.status(400).json({ message: 'User is already an admin' });
+    }
+
+    user.role = 'admin';
+    await user.save();
+
+    res.json({ 
+      message: `User ${user.username} has been promoted to admin`,
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        displayName: user.displayName,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error('Promote user error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// 降级管理员为普通用户 (仅管理员)
+router.put('/:userId/demote', adminAuth, async (req, res) => {
+  try {
+    if (req.user._id.toString() === req.params.userId) {
+      return res.status(400).json({ message: 'Cannot modify your own role' });
+    }
+
+    const user = await User.findById(req.params.userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.role === 'user') {
+      return res.status(400).json({ message: 'User is already a regular user' });
+    }
+
+    user.role = 'user';
+    await user.save();
+
+    res.json({ 
+      message: `User ${user.username} has been demoted to regular user`,
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        displayName: user.displayName,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error('Demote user error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// 获取所有管理员列表 (仅管理员)
+router.get('/admins', adminAuth, async (req, res) => {
+  try {
+    const admins = await User.find({ role: 'admin' })
+      .select('-password')
+      .sort({ createdAt: -1 });
+
+    res.json({ admins });
+  } catch (error) {
+    console.error('Get admins error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

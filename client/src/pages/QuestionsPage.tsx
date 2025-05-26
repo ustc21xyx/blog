@@ -129,7 +129,7 @@ const QuestionsPage: React.FC = () => {
               管理评测题目，支持文本、LaTeX公式和HTML内容
             </p>
           </div>
-          {user?.role === 'admin' && (
+          {user && (
             <button
               onClick={() => setShowCreateForm(true)}
               className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
@@ -357,7 +357,7 @@ const QuestionsPage: React.FC = () => {
             </svg>
             <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">暂无题目</h3>
             <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {user?.role === 'admin' ? '开始创建第一个评测题目' : '管理员还未创建任何题目'}
+              {user ? '开始创建第一个评测题目' : '请登录后创建评测题目'}
             </p>
           </div>
         )}
