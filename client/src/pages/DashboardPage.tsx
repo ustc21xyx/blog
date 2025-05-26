@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { PenTool, Eye, Heart, MessageCircle, BookOpen } from 'lucide-react';
+import { PenTool, Eye, Heart, MessageCircle, BookOpen, Crown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 import { blogApi } from '../utils/api';
@@ -16,6 +16,9 @@ const DashboardPage = () => {
     totalComments: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [showAdminUpgrade, setShowAdminUpgrade] = useState(false);
+  const [upgradeCode, setUpgradeCode] = useState('');
+  const [upgrading, setUpgrading] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -44,6 +47,303 @@ const DashboardPage = () => {
       console.error('Error fetching user posts:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAdminUpgrade = async () => {
+    // 二次元梗密码列表
+    const validCodes = [
+      '欧尼酱大变态',
+      '雅蠛蝶',
+      '纳尼',
+      '无路赛',
+      '红豆泥斯国一',
+      '八嘎呀路',
+      '卡哇伊',
+      '多摩',
+      'poi',
+      '马达马达',
+      '德丝',
+      '达咩',
+      '阿里嘎多',
+      '司马塞',
+      '哈拉绍',
+      '莫西莫西',
+      '一库',
+      '猴塞雷',
+      '萌萌哒',
+      '傲娇',
+      '病娇',
+      '呆萌',
+      '宅腐萌',
+      '妹控',
+      '萝莉控',
+      '奥义·千年杀',
+      '多重影分身',
+      '瞬身术',
+      '木叶忍者',
+      '我要成为海贼王',
+      '超级赛亚人',
+      '龙珠',
+      '完全体',
+      '最终形态',
+      '魔法少女',
+      '变身',
+      '守护甜心',
+      '月野兔',
+      '美少女战士',
+      '初音未来',
+      'MIKU',
+      '葱娘',
+      '黑长直',
+      '双马尾',
+      '猫耳娘',
+      '兽耳',
+      '触手',
+      '本子',
+      '里番',
+      '绅士',
+      '肥宅快乐水',
+      '二次元老婆',
+      '三次元滚开',
+      '现充爆炸吧',
+      'FFF团',
+      '单身狗',
+      '死宅',
+      '引き篭もり',
+      'NEET',
+      '次元壁',
+      '破次元壁',
+      '异世界',
+      '穿越',
+      '转生',
+      '后宫',
+      '修罗场',
+      '便当',
+      '刀子',
+      '发糖',
+      '发刀',
+      '致郁',
+      '治愈',
+      '燃',
+      '萌',
+      '腐',
+      '百合',
+      '耽美',
+      'BL',
+      'GL',
+      '攻受',
+      '总受',
+      '总攻',
+      '女王受',
+      '抖S',
+      '抖M',
+      '天然呆',
+      '黑化',
+      '洗白',
+      '便当',
+      '开后宫',
+      '收后宫',
+      '立flag',
+      '倒flag',
+      '死亡flag',
+      '强制续命',
+      '氪金',
+      '非酋',
+      '欧皇',
+      '抽卡',
+      '十连',
+      '出货',
+      '保底',
+      '歪了',
+      '毕业了',
+      '入坑',
+      '脱坑',
+      '安利',
+      '墙头',
+      '爬墙',
+      '本命',
+      '大法好',
+      'awsl',
+      'yyds',
+      'prpr',
+      'mmp',
+      'gg',
+      'orz',
+      '233',
+      '666',
+      '2333',
+      '23333',
+      '蛤蛤蛤',
+      '哈哈哈',
+      '嘤嘤嘤',
+      '呜呜呜',
+      '555',
+      '哭唧唧',
+      '嘤嘤怪',
+      '元气满满',
+      '满血复活',
+      'HP-1',
+      'MP不足',
+      '掉san',
+      '理智蒸发',
+      '脑子瓦特了',
+      '脑补',
+      '妄想',
+      '中二病',
+      '厨二病',
+      '黑历史',
+      '社死',
+      '原地去世',
+      '当场去世',
+      '我死了',
+      '已逝',
+      '鸽了',
+      '咕咕咕',
+      '真香',
+      '蛙趣',
+      '有内味了',
+      '确实',
+      '没毛病',
+      '问题不大',
+      '稳得一批',
+      '牛逼',
+      '可以的',
+      '奶思',
+      '橘势大好',
+      '橘里橘气',
+      '正义的伙伴',
+      'English母语',
+      '本子画师',
+      '立绘师',
+      'CV',
+      '监督',
+      '脚本',
+      '原画师',
+      '声优',
+      '中之人',
+      '皮套人',
+      'Vtuber',
+      '虚拟主播',
+      '切片',
+      '单推',
+      'DD',
+      '撒娇',
+      '卖萌',
+      '装可爱',
+      '嘟嘟嘟',
+      '啵啵啵',
+      '摸摸哒',
+      '抱抱',
+      '亲亲',
+      '贴贴',
+      '蹭蹭',
+      '揉揉',
+      '戳戳',
+      '刺溜',
+      '吨吨吨',
+      '咔嚓',
+      '嗷呜',
+      '旺',
+      '喵',
+      '汪',
+      '嘎',
+      '咕',
+      '哞',
+      '嘶',
+      '嗨嗨嗨',
+      '达咩哟',
+      '不可以',
+      'dame',
+      'yamete',
+      'kimoji',
+      'itai',
+      'oshimai',
+      'owari',
+      'hajimari',
+      '我摊牌了',
+      '你是懂的',
+      '鸡你太美',
+      '只因',
+      '纯路人',
+      '真爱粉',
+      '路转粉',
+      '粉转黑',
+      '黑转粉',
+      '回踩',
+      '脱粉',
+      '入股',
+      '关注',
+      '取关',
+      '拉黑',
+      '举报',
+      '封号',
+      '炸号',
+      '开小号',
+      '水军',
+      '黑粉',
+      '白莲花',
+      '绿茶',
+      '海王',
+      '舔狗',
+      '工具人',
+      '备胎',
+      '正宫',
+      '小三',
+      '渣男',
+      '渣女',
+      '钢铁直男',
+      '钢铁直女',
+      '百合控',
+      '腐女',
+      '腐男',
+      '宅男',
+      '宅女',
+      '处男',
+      '处女',
+      '母胎solo',
+      '万年单身',
+      '恋爱绝缘体',
+      '恋爱废柴',
+      '恋爱白痴',
+      '木头',
+      '榆木疙瘩',
+      '钢铁直男癌',
+      '异性绝缘体'
+    ];
+
+    if (!validCodes.includes(upgradeCode.trim())) {
+      alert('❌ 密码错误！请输入正确的二次元密码');
+      return;
+    }
+
+    setUpgrading(true);
+    try {
+      // 调用升级API
+      const response = await fetch('/api/user/upgrade-admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ upgradeCode: upgradeCode.trim() })
+      });
+
+      if (response.ok) {
+        alert('🎉 恭喜！你已经成为管理员了！请重新登录以获取新权限。');
+        // 刷新用户信息
+        window.location.reload();
+      } else {
+        const error = await response.json();
+        alert(`❌ 升级失败: ${error.message}`);
+      }
+    } catch (error) {
+      console.error('Upgrade error:', error);
+      alert('❌ 升级失败，请稍后重试');
+    } finally {
+      setUpgrading(false);
+      setUpgradeCode('');
+      setShowAdminUpgrade(false);
     }
   };
 
@@ -244,6 +544,86 @@ const DashboardPage = () => {
             </div>
           )}
         </motion.div>
+
+        {/* 隐藏的管理员升级功能 */}
+        {user?.role !== 'admin' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mt-12 text-center"
+          >
+            <button
+              onClick={() => setShowAdminUpgrade(!showAdminUpgrade)}
+              className="text-xs text-gray-400 hover:text-purple-500 transition-colors duration-200"
+            >
+              ✨ 二次元力量觉醒 ✨
+            </button>
+            
+            {showAdminUpgrade && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-6 max-w-md mx-auto"
+              >
+                <div className="bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 rounded-lg p-6">
+                  <div className="flex items-center justify-center mb-4">
+                    <Crown className="w-8 h-8 text-yellow-500 mr-2" />
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                      管理员觉醒仪式
+                    </h3>
+                  </div>
+                  
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                    输入二次元密码即可获得管理员权限~ <br/>
+                    <span className="text-xs text-gray-500">
+                      提示: 尝试一些经典的二次元梗吧 (≧∇≦)ﾉ
+                    </span>
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <input
+                      type="text"
+                      value={upgradeCode}
+                      onChange={(e) => setUpgradeCode(e.target.value)}
+                      placeholder="输入二次元密码... 例如: 欧尼酱大变态"
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg text-center bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      onKeyPress={(e) => e.key === 'Enter' && handleAdminUpgrade()}
+                    />
+                    
+                    <div className="flex space-x-3">
+                      <button
+                        onClick={() => setShowAdminUpgrade(false)}
+                        className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      >
+                        取消
+                      </button>
+                      <button
+                        onClick={handleAdminUpgrade}
+                        disabled={upgrading || !upgradeCode.trim()}
+                        className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {upgrading ? '觉醒中...' : '开始觉醒'}
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+                    <details>
+                      <summary className="cursor-pointer hover:text-purple-500">💡 密码提示</summary>
+                      <div className="mt-2 text-left">
+                        <p>经典日语: 雅蠛蝶、纳尼、达咩...</p>
+                        <p>二次元梗: 萌萌哒、傲娇、病娇...</p>
+                        <p>动漫相关: 我要成为海贼王、超级赛亚人...</p>
+                        <p>网络用语: awsl、yyds、233...</p>
+                        <p>还有更多等你发现~ (´∀`)</p>
+                      </div>
+                    </details>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
       </div>
     </div>
   );
