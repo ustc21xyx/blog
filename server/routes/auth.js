@@ -3,18 +3,8 @@ const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
-const mongoose = require('mongoose');
 
 const router = express.Router();
-
-// Middleware to log database connection status for auth routes
-router.use((req, res, next) => {
-  console.log('[AUTH API] Database state:', mongoose.connection.readyState);
-  if (mongoose.connection.readyState !== 1) {
-    console.error('[AUTH API] Database not connected - allowing request to proceed');
-  }
-  next();
-});
 
 const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET || 'anime-blog-secret-key', {

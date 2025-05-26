@@ -78,10 +78,15 @@ app.get('/api/debug', (req, res) => {
   });
 });
 
-// Database connection setup  
+// Database connection with better serverless handling
+let isConnected = false;
+
 const connectDB = async () => {
+  if (isConnected && mongoose.connection.readyState === 1) {
+    return;
+  }
+  
   try {
-    // Check for various MongoDB URI environment variables
     let mongoURI = process.env.MONGODB_URI || 
                    process.env.MONGO_URI || 
                    process.env.DATABASE_URL ||
@@ -89,11 +94,8 @@ const connectDB = async () => {
     
     console.log('[DB] Environment check:');
     console.log('[DB] MONGODB_URI exists:', !!process.env.MONGODB_URI);
-    console.log('[DB] MONGO_URI exists:', !!process.env.MONGO_URI);
-    console.log('[DB] DATABASE_URL exists:', !!process.env.DATABASE_URL);
     console.log('[DB] NODE_ENV:', process.env.NODE_ENV);
     
-    // Fix the MongoDB URI by adding database name if missing
     if (mongoURI) {
       if (mongoURI.includes('mongodb.net') && !mongoURI.includes('/anime-blog')) {
         mongoURI = mongoURI.replace('/?', '/anime-blog?');
@@ -106,40 +108,48 @@ const connectDB = async () => {
     
     console.log('[DB] Attempting connection...');
     
-    await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 15000,
-      connectTimeoutMS: 15000,
-      maxPoolSize: 5,
-      socketTimeoutMS: 0,
-      bufferCommands: false
-    });
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect(mongoURI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 5000,
+        connectTimeoutMS: 5000,
+        maxPoolSize: 3
+      });
+    }
     
+    isConnected = true;
     console.log('🎌 MongoDB connected successfully');
     
   } catch (err) {
     console.error('❌ Database connection failed:', err.message);
-    console.error('❌ Full error:', err);
-    
-    // Don't retry in serverless environment
-    if (process.env.VERCEL) {
-      console.log('[VERCEL] Running in serverless, skipping retry');
-    }
+    isConnected = false;
   }
 };
 
 // Handle MongoDB connection events
+mongoose.connection.on('connected', () => {
+  console.log('MongoDB connected event fired');
+  isConnected = true;
+});
+
 mongoose.connection.on('error', (err) => {
   console.error('MongoDB connection error:', err.message);
+  isConnected = false;
 });
 
 mongoose.connection.on('disconnected', () => {
   console.log('MongoDB disconnected');
+  isConnected = false;
 });
 
-mongoose.connection.on('connected', () => {
-  console.log('MongoDB connected successfully');
+// Middleware to ensure database connection for API routes
+app.use('/api', async (req, res, next) => {
+  if (!isConnected || mongoose.connection.readyState !== 1) {
+    console.log('[API] Attempting to connect to database...');
+    await connectDB();
+  }
+  next();
 });
 
 // Routes
