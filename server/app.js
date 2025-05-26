@@ -109,10 +109,11 @@ const connectDB = async () => {
     await mongoose.connect(mongoURI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 30000,
-      connectTimeoutMS: 30000,
-      maxPoolSize: 10,
-      socketTimeoutMS: 0
+      serverSelectionTimeoutMS: 15000,
+      connectTimeoutMS: 15000,
+      maxPoolSize: 5,
+      socketTimeoutMS: 0,
+      bufferCommands: false
     });
     
     console.log('🎌 MongoDB connected successfully');
