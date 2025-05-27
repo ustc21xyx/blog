@@ -536,8 +536,8 @@ const AnswerQuestionPage: React.FC = () => {
                       </div>
                       
                       {/* 展开的内容 */}
-                      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                        isExpanded ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
+                      <div className={`transition-all duration-300 ease-in-out ${
+                        isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
                       }`}>
                         <div className="px-4 pb-4">
                           <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
@@ -562,11 +562,13 @@ const AnswerQuestionPage: React.FC = () => {
                                   </button>
                                 )}
                               </div>
-                              <ContentRenderer
-                                content={answer.content}
-                                contentType={answer.contentType}
-                                className="text-gray-800 dark:text-gray-200 text-sm"
-                              />
+                              <div className="max-h-96 overflow-y-auto">
+                                <ContentRenderer
+                                  content={answer.content}
+                                  contentType={answer.contentType}
+                                  className="text-gray-800 dark:text-gray-200 text-sm"
+                                />
+                              </div>
                             </div>
                             
                             <div className="flex items-center justify-between mb-3">
@@ -580,8 +582,9 @@ const AnswerQuestionPage: React.FC = () => {
                               )}
                             </div>
                             
-                            <div className="flex items-center gap-1">
-                              <span className="text-xs text-gray-600 dark:text-gray-400 mr-2">重新评分:</span>
+                            {/* 评分区域 */}
+                            <div className="flex flex-wrap items-center gap-2 mb-3">
+                              <span className="text-xs text-gray-600 dark:text-gray-400">重新评分:</span>
                               {[1, 2, 3, 4, 5].map((score) => (
                                 <button
                                   key={score}
@@ -598,9 +601,12 @@ const AnswerQuestionPage: React.FC = () => {
                                   {score}
                                 </button>
                               ))}
+                            </div>
 
+                            {/* 操作按钮区域 */}
+                            <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-600">
                               {/* 删除按钮调试信息 */}
-                              <div className="ml-3 text-xs text-gray-500 dark:text-gray-400 bg-yellow-100 dark:bg-yellow-900 p-1 rounded">
+                              <div className="text-xs text-gray-500 dark:text-gray-400 bg-yellow-100 dark:bg-yellow-900 p-2 rounded">
                                 <p>删除调试:</p>
                                 <p>用户角色: {user?.role}</p>
                                 <p>用户ID: {user?._id}</p>
@@ -617,12 +623,13 @@ const AnswerQuestionPage: React.FC = () => {
                                     e.stopPropagation();
                                     handleDeleteAnswer(answer._id);
                                   }}
-                                  className="ml-3 inline-flex items-center justify-center w-7 h-7 rounded-lg bg-red-500 hover:bg-red-600 text-white transition-colors"
+                                  className="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors"
                                   title="删除答案"
                                 >
-                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                   </svg>
+                                  删除答案
                                 </button>
                               )}
                             </div>
