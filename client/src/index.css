@@ -387,4 +387,26 @@
     backdrop-filter: blur(10px);
     border: 1px solid rgba(45, 45, 68, 0.5);
   }
+
+  /* 修复单字符段落的渲染问题 */
+  .prose p:has(> :only-child) {
+    @apply inline-block;
+  }
+  
+  /* 针对只包含一个字符的段落 */
+  .prose p {
+    word-break: keep-all;
+  }
+  
+  /* 如果段落只包含很短的内容，使其内联显示 */
+  .prose p:where(:not(:has(> *))) {
+    display: inline-block;
+    margin-right: 0.25rem;
+  }
+  
+  /* 特别处理单字符或短文本段落 */
+  .single-char-paragraph {
+    display: inline;
+    margin-right: 0.25rem;
+  }
 }

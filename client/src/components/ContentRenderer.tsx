@@ -61,18 +61,6 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ content, contentType,
                     {children}
                   </td>
                 ),
-                // Custom paragraph renderer to handle single characters
-                p: (paragraph: any) => { // Added 'any' for now, consider defining a more specific type
-                  const { node } = paragraph;
-                  if (node && node.children && node.children.length === 1) {
-                    const childNode = node.children[0];
-                    if (childNode.type === 'text' && typeof childNode.value === 'string' && childNode.value.length === 1 && /^[a-zA-Z]$/.test(childNode.value)) {
-                      // Render single letters as a span with a specific class
-                      return <span className="single-char-paragraph">{paragraph.children}</span>;
-                    }
-                  }
-                  return <p>{paragraph.children}</p>;
-                },
               }}
             >
               {content}
