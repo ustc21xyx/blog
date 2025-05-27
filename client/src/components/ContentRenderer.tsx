@@ -13,6 +13,66 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ content, contentType,
   const renderContent = () => {
     switch (contentType) {
       case 'text':
+        // 文本模式也支持LaTeX公式渲染
+        let textContent = content;
+        
+        // 检查是否包含LaTeX公式
+        const hasFormulas = /\$\$\$\$[\s\S]*?\$\$\$\$|\$\$[\s\S]*?\$\$|\$[^$\n]+?\$/.test(textContent);
+        
+        if (hasFormulas) {
+          // 处理 $$$$ 包裹的公式
+          textContent = textContent.replace(/\$\$\$\$([\s\S]*?)\$\$\$\$/g, (match, latex) => {
+            try {
+              return katex.renderToString(latex.trim(), {
+                throwOnError: false,
+                displayMode: true,
+                output: 'html'
+              });
+            } catch (error) {
+              console.error('LaTeX render error:', error);
+              return `<span class="text-red-600 dark:text-red-400">LaTeX错误: ${latex}</span>`;
+            }
+          });
+          
+          // 处理 $$ 包裹的公式
+          textContent = textContent.replace(/\$\$([\s\S]*?)\$\$/g, (match, latex) => {
+            try {
+              return katex.renderToString(latex.trim(), {
+                throwOnError: false,
+                displayMode: true,
+                output: 'html'
+              });
+            } catch (error) {
+              console.error('LaTeX render error:', error);
+              return `<span class="text-red-600 dark:text-red-400">LaTeX错误: ${latex}</span>`;
+            }
+          });
+          
+          // 处理 $ 包裹的公式
+          textContent = textContent.replace(/\$([^$\n]+?)\$/g, (match, latex) => {
+            try {
+              return katex.renderToString(latex.trim(), {
+                throwOnError: false,
+                displayMode: false,
+                output: 'html'
+              });
+            } catch (error) {
+              console.error('LaTeX render error:', error);
+              return `<span class="text-red-600 dark:text-red-400">LaTeX错误: ${latex}</span>`;
+            }
+          });
+          
+          // 转换换行符为HTML换行
+          textContent = textContent.replace(/\n/g, '<br/>');
+          
+          return (
+            <div 
+              className={`${className}`}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(textContent) }}
+            />
+          );
+        }
+        
         return (
           <div className={`whitespace-pre-wrap ${className}`}>
             {content}
@@ -51,27 +111,49 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ content, contentType,
 
       case 'mixed':
         // 处理混合内容：支持内联LaTeX公式和HTML
-        const processedContent = content
-          .replace(/\$\$(.*?)\$\$/g, (match, latex) => {
-            try {
-              return katex.renderToString(latex, {
-                throwOnError: false,
-                displayMode: true
-              });
-            } catch {
-              return match;
-            }
-          })
-          .replace(/\$(.*?)\$/g, (match, latex) => {
-            try {
-              return katex.renderToString(latex, {
-                throwOnError: false,
-                displayMode: false
-              });
-            } catch {
-              return match;
-            }
-          });
+        let processedContent = content;
+        
+        // 首先处理 $$$$ 包裹的公式（四个美元符号）
+        processedContent = processedContent.replace(/\$\$\$\$([\s\S]*?)\$\$\$\$/g, (match, latex) => {
+          try {
+            return katex.renderToString(latex.trim(), {
+              throwOnError: false,
+              displayMode: true,
+              output: 'html'
+            });
+          } catch (error) {
+            console.error('LaTeX render error:', error);
+            return `<span class="text-red-600 dark:text-red-400">LaTeX错误: ${latex}</span>`;
+          }
+        });
+        
+        // 然后处理 $$ 包裹的公式（两个美元符号，显示模式）
+        processedContent = processedContent.replace(/\$\$([\s\S]*?)\$\$/g, (match, latex) => {
+          try {
+            return katex.renderToString(latex.trim(), {
+              throwOnError: false,
+              displayMode: true,
+              output: 'html'
+            });
+          } catch (error) {
+            console.error('LaTeX render error:', error);
+            return `<span class="text-red-600 dark:text-red-400">LaTeX错误: ${latex}</span>`;
+          }
+        });
+        
+        // 最后处理 $ 包裹的公式（单个美元符号，内联模式）
+        processedContent = processedContent.replace(/\$([^$\n]+?)\$/g, (match, latex) => {
+          try {
+            return katex.renderToString(latex.trim(), {
+              throwOnError: false,
+              displayMode: false,
+              output: 'html'
+            });
+          } catch (error) {
+            console.error('LaTeX render error:', error);
+            return `<span class="text-red-600 dark:text-red-400">LaTeX错误: ${latex}</span>`;
+          }
+        });
         
         const sanitizedContent = DOMPurify.sanitize(processedContent);
         return (
