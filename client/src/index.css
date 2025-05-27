@@ -388,25 +388,21 @@
     border: 1px solid rgba(45, 45, 68, 0.5);
   }
 
-  /* 修复单字符段落的渲染问题 */
-  .prose p:has(> :only-child) {
-    @apply inline-block;
+  /* 修复内联代码的渲染问题 - 确保内联代码不会单独占一行 */
+  .prose code:not(pre code) {
+    display: inline !important;
+    @apply bg-gray-100 dark:bg-dark-card px-2 py-1 rounded text-sm font-mono text-anime-purple-600 dark:text-anime-purple-400;
   }
   
-  /* 针对只包含一个字符的段落 */
-  .prose p {
-    word-break: keep-all;
+  /* 确保包含内联代码的段落正常流动 */
+  .prose p code {
+    display: inline !important;
   }
   
-  /* 如果段落只包含很短的内容，使其内联显示 */
-  .prose p:where(:not(:has(> *))) {
-    display: inline-block;
-    margin-right: 0.25rem;
-  }
-  
-  /* 特别处理单字符或短文本段落 */
-  .single-char-paragraph {
-    display: inline;
+  /* 修复被反引号包围的单个字符或短文本的显示 */
+  .prose p:has(code:only-child) {
+    display: inline !important;
+    margin-bottom: 0 !important;
     margin-right: 0.25rem;
   }
 }
