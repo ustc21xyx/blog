@@ -24,6 +24,24 @@ const AnswerQuestionPage: React.FC = () => {
   });
   const [submitting, setSubmitting] = useState(false);
   const [expandedAnswer, setExpandedAnswer] = useState<string | null>(null);
+  const [copyButtonText, setCopyButtonText] = useState('复制题目');
+
+  const handleCopyQuestion = async () => {
+    if (!question) return;
+    try {
+      await navigator.clipboard.writeText(question.content);
+      setCopyButtonText('已复制!');
+      setTimeout(() => {
+        setCopyButtonText('复制题目');
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to copy question: ', err);
+      setCopyButtonText('复制失败');
+      setTimeout(() => {
+        setCopyButtonText('复制题目');
+      }, 2000);
+    }
+  };
 
   useEffect(() => {
     if (questionId) {
@@ -187,20 +205,30 @@ const AnswerQuestionPage: React.FC = () => {
 
         {/* 题目内容 */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
-          <div className="mb-4">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              {question.title}
-            </h1>
-            <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
-              <span>分类: {question.category?.name || '未分类'}</span>
-              <span>难度: {question.difficulty}</span>
-              <span>内容类型: {question.contentType}</span>
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                {question.title}
+              </h1>
+              <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                <span>分类: {question.category?.name || '未分类'}</span>
+                <span>难度: {question.difficulty}</span>
+                <span>内容类型: {question.contentType}</span>
+              </div>
             </div>
+            <button
+              onClick={handleCopyQuestion}
+              className="ml-4 px-3 py-1.5 text-sm font-medium text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors flex items-center flex-shrink-0"
+              title="复制题目内容"
+            >
+              <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+              {copyButtonText}
+            </button>
           </div>
           <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
             <ContentRenderer
               content={question.content}
-              contentType={question.contentType}
+              contentType={['text', 'latex', 'mixed'].includes(question.contentType) ? 'markdown' : question.contentType as 'markdown' | 'html'}
               className="text-gray-700 dark:text-gray-300"
             />
           </div>
@@ -465,7 +493,7 @@ const AnswerQuestionPage: React.FC = () => {
                               <div className="max-h-96 overflow-y-auto">
                                 <ContentRenderer
                                   content={answer.content}
-                                  contentType={answer.contentType}
+                                  contentType={['text', 'latex', 'mixed'].includes(answer.contentType) ? 'markdown' : answer.contentType as 'markdown' | 'html'}
                                   className="text-gray-800 dark:text-gray-200 text-sm"
                                 />
                               </div>
