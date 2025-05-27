@@ -5,10 +5,12 @@ import type { EvaluationQuestion, EvaluationCategory, CreateQuestionForm } from 
 import { useAuthStore } from '../store/authStore';
 import ContentRenderer from '../components/ContentRenderer';
 import Editor from '@monaco-editor/react';
+import { useTheme } from '../hooks/useTheme';
 
 const QuestionsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const { theme } = useTheme();
   const [questions, setQuestions] = useState<EvaluationQuestion[]>([]);
   const [categories, setCategories] = useState<EvaluationCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -276,11 +278,14 @@ const QuestionsPage: React.FC = () => {
                         defaultLanguage={formData.contentType === 'html' ? 'html' : formData.contentType === 'latex' ? 'latex' : 'plaintext'}
                         value={formData.content}
                         onChange={(value) => setFormData({ ...formData, content: value || '' })}
-                        theme="vs-dark"
+                        theme={theme === 'dark' ? 'vs-dark' : 'light'}
                         options={{
                           minimap: { enabled: false },
                           scrollBeyondLastLine: false,
-                          wordWrap: 'on'
+                          wordWrap: 'on',
+                          fontSize: 14,
+                          lineHeight: 1.5,
+                          padding: { top: 10, bottom: 10 }
                         }}
                       />
                     </div>

@@ -4,10 +4,12 @@ import { evaluationApi } from '../utils/evaluationApi';
 import type { EvaluationQuestion, EvaluationModel, ModelAnswer, SubmitAnswerForm } from '../types';
 import ContentRenderer from '../components/ContentRenderer';
 import Editor from '@monaco-editor/react';
+import { useTheme } from '../hooks/useTheme';
 
 const AnswerQuestionPage: React.FC = () => {
   const { questionId } = useParams<{ questionId: string }>();
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const [question, setQuestion] = useState<EvaluationQuestion | null>(null);
   const [models, setModels] = useState<EvaluationModel[]>([]);
   const [answers, setAnswers] = useState<ModelAnswer[]>([]);
@@ -198,11 +200,14 @@ const AnswerQuestionPage: React.FC = () => {
                     defaultLanguage={answerForm.contentType === 'html' ? 'html' : answerForm.contentType === 'latex' ? 'latex' : 'plaintext'}
                     value={answerForm.content}
                     onChange={(value) => setAnswerForm({ ...answerForm, content: value || '' })}
-                    theme="vs-dark"
+                    theme={theme === 'dark' ? 'vs-dark' : 'light'}
                     options={{
                       minimap: { enabled: false },
                       scrollBeyondLastLine: false,
-                      wordWrap: 'on'
+                      wordWrap: 'on',
+                      fontSize: 14,
+                      lineHeight: 1.5,
+                      padding: { top: 10, bottom: 10 }
                     }}
                   />
                 </div>
