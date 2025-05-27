@@ -229,10 +229,10 @@ const QuestionsPage: React.FC = () => {
                         onChange={(e) => setFormData({ ...formData, contentType: e.target.value as any })}
                         className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
                       >
-                        <option value="text">纯文本</option>
-                        <option value="latex">LaTeX公式</option>
-                        <option value="html">HTML</option>
-                        <option value="mixed">混合内容</option>
+                        <option value="text">Markdown文本（支持LaTeX公式）</option>
+                        <option value="latex">纯LaTeX数学公式</option>
+                        <option value="html">HTML代码</option>
+                        <option value="mixed">Markdown + LaTeX</option>
                       </select>
                     </div>
                     <div>

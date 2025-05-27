@@ -109,122 +109,13 @@ const AnswerQuestionPage: React.FC = () => {
   };
 
   const handlePreviewHTML = (content: string, modelName: string) => {
-    // 创建一个完整的HTML文档
-    const htmlContent = `
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HTML预览 - ${modelName}</title>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f8fafc;
-        }
-        .preview-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .preview-content {
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            border: 1px solid #e2e8f0;
-        }
-        .preview-footer {
-            text-align: center;
-            margin-top: 20px;
-            padding: 15px;
-            background: #f1f5f9;
-            border-radius: 8px;
-            color: #64748b;
-            font-size: 14px;
-        }
-        /* 为用户HTML内容提供一些基础样式 */
-        .preview-content h1, .preview-content h2, .preview-content h3, 
-        .preview-content h4, .preview-content h5, .preview-content h6 {
-            margin-top: 1.5em;
-            margin-bottom: 0.5em;
-            color: #1e293b;
-        }
-        .preview-content p {
-            margin-bottom: 1em;
-        }
-        .preview-content img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-        }
-        .preview-content table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1em 0;
-        }
-        .preview-content th, .preview-content td {
-            border: 1px solid #e2e8f0;
-            padding: 8px 12px;
-            text-align: left;
-        }
-        .preview-content th {
-            background-color: #f8fafc;
-            font-weight: 600;
-        }
-        .preview-content code {
-            background-color: #f1f5f9;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
-            font-size: 0.9em;
-        }
-        .preview-content pre {
-            background-color: #1e293b;
-            color: #e2e8f0;
-            padding: 16px;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin: 1em 0;
-        }
-        .preview-content pre code {
-            background: none;
-            padding: 0;
-            color: inherit;
-        }
-    </style>
-</head>
-<body>
-    <div class="preview-header">
-        <h1 style="margin: 0; font-size: 24px;">🌐 HTML预览</h1>
-        <p style="margin: 8px 0 0 0; opacity: 0.9;">模型: ${modelName} | 生成时间: ${new Date().toLocaleString('zh-CN')}</p>
-    </div>
-    <div class="preview-content">
-        ${content}
-    </div>
-    <div class="preview-footer">
-        ⚠️ 此预览在隔离环境中渲染，某些功能可能受限 • 由模型评测系统生成
-    </div>
-</body>
-</html>`;
-
-    // 创建Blob并在新标签页中打开
-    const blob = new Blob([htmlContent], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const newWindow = window.open(url, '_blank');
-    
-    // 清理URL对象（延迟清理，确保页面加载完成）
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 1000);
+    // 直接打开新标签页并写入HTML内容
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.document.write(content);
+      newWindow.document.close();
+      newWindow.document.title = `HTML预览 - ${modelName}`;
+    }
   };
 
   const getScoreColor = (score: number) => {
@@ -354,10 +245,10 @@ const AnswerQuestionPage: React.FC = () => {
                     onChange={(e) => setAnswerForm({ ...answerForm, contentType: e.target.value as any })}
                     className="block w-full border border-gray-300 dark:border-gray-600 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
                   >
-                    <option value="text">📝 纯文本</option>
-                    <option value="latex">🔢 LaTeX公式</option>
-                    <option value="html">🌐 HTML</option>
-                    <option value="mixed">🎨 混合内容</option>
+                    <option value="text">📝 Markdown文本（支持LaTeX）</option>
+                    <option value="latex">🔢 纯LaTeX数学公式</option>
+                    <option value="html">🌐 HTML代码</option>
+                    <option value="mixed">🎨 Markdown + LaTeX</option>
                   </select>
                 </div>
                 
