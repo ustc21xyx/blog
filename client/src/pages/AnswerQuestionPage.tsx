@@ -266,6 +266,23 @@ const AnswerQuestionPage: React.FC = () => {
           ← 返回题目列表
         </button>
 
+        {/* 全局调试信息 */}
+        <div className="bg-red-100 dark:bg-red-900 rounded-lg shadow p-4 mb-4">
+          <h3 className="text-lg font-bold text-red-800 dark:text-red-200 mb-2">🔍 调试信息</h3>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p><strong>当前用户:</strong> {user?.username || '未登录'}</p>
+              <p><strong>用户角色:</strong> {user?.role || '未设置'}</p>
+              <p><strong>用户ID:</strong> {user?._id || '无'}</p>
+            </div>
+            <div>
+              <p><strong>答案数量:</strong> {answers.length}</p>
+              <p><strong>模型数量:</strong> {models.length}</p>
+              <p><strong>题目ID:</strong> {questionId}</p>
+            </div>
+          </div>
+        </div>
+
         {/* 题目内容 */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
           <div className="mb-4">
@@ -586,15 +603,15 @@ const AnswerQuestionPage: React.FC = () => {
                               <div className="ml-3 text-xs text-gray-500 dark:text-gray-400 bg-yellow-100 dark:bg-yellow-900 p-1 rounded">
                                 <p>删除调试:</p>
                                 <p>用户角色: {user?.role}</p>
-                                <p>用户ID: {user?.id}</p>
-                                <p>提交者ID: {answer.submittedBy?.id}</p>
+                                <p>用户ID: {user?._id}</p>
+                                <p>提交者ID: {answer.submittedBy?._id}</p>
                                 <p>是管理员: {user?.role === 'admin' ? '是' : '否'}</p>
-                                <p>是作者: {user?.id === answer.submittedBy?.id ? '是' : '否'}</p>
-                                <p>应显示: {(user?.role === 'admin' || user?.id === answer.submittedBy?.id) ? '是' : '否'}</p>
+                                <p>是作者: {user?._id === answer.submittedBy?._id ? '是' : '否'}</p>
+                                <p>应显示: {(user?.role === 'admin' || user?._id === answer.submittedBy?._id) ? '是' : '否'}</p>
                               </div>
 
                               {/* 删除按钮 */}
-                              {(user?.role === 'admin' || user?.id === answer.submittedBy?.id) && (
+                              {(user?.role === 'admin' || user?._id === answer.submittedBy?._id) && (
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();

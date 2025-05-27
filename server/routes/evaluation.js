@@ -365,9 +365,17 @@ router.get('/questions/:questionId/answers', [
       .populate('scoredBy', 'username displayName')
       .sort({ createdAt: -1 });
 
+    // 转换字段名：将 modelId 重命名为 model
+    const transformedAnswers = answers.map(answer => {
+      const answerObj = answer.toObject();
+      answerObj.model = answerObj.modelId;
+      delete answerObj.modelId;
+      return answerObj;
+    });
+
     res.json({
       success: true,
-      answers
+      answers: transformedAnswers
     });
   } catch (error) {
     console.error('Get answers error:', error);
