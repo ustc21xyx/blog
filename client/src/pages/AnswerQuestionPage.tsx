@@ -5,11 +5,13 @@ import type { EvaluationQuestion, EvaluationModel, ModelAnswer, SubmitAnswerForm
 import ContentRenderer from '../components/ContentRenderer';
 import Editor from '@monaco-editor/react';
 import { useTheme } from '../hooks/useTheme';
+import { useAuthStore } from '../store/authStore';
 
 const AnswerQuestionPage: React.FC = () => {
   const { questionId } = useParams<{ questionId: string }>();
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { user } = useAuthStore();
   const [question, setQuestion] = useState<EvaluationQuestion | null>(null);
   const [models, setModels] = useState<EvaluationModel[]>([]);
   const [answers, setAnswers] = useState<ModelAnswer[]>([]);
@@ -83,6 +85,138 @@ const AnswerQuestionPage: React.FC = () => {
     } catch (error) {
       console.error('Failed to score answer:', error);
     }
+  };
+
+  const handleDeleteAnswer = async (answerId: string) => {
+    if (!confirm('确定要删除这个答案吗？此操作不可恢复。')) {
+      return;
+    }
+    
+    try {
+      await evaluationApi.deleteAnswer(answerId);
+      fetchData(); // 刷新答案列表
+    } catch (error) {
+      console.error('Failed to delete answer:', error);
+    }
+  };
+
+  const handlePreviewHTML = (content: string, modelName: string) => {
+    // 创建一个完整的HTML文档
+    const htmlContent = `
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML预览 - ${modelName}</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8fafc;
+        }
+        .preview-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .preview-content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+        }
+        .preview-footer {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f1f5f9;
+            border-radius: 8px;
+            color: #64748b;
+            font-size: 14px;
+        }
+        /* 为用户HTML内容提供一些基础样式 */
+        .preview-content h1, .preview-content h2, .preview-content h3, 
+        .preview-content h4, .preview-content h5, .preview-content h6 {
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            color: #1e293b;
+        }
+        .preview-content p {
+            margin-bottom: 1em;
+        }
+        .preview-content img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        .preview-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1em 0;
+        }
+        .preview-content th, .preview-content td {
+            border: 1px solid #e2e8f0;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        .preview-content th {
+            background-color: #f8fafc;
+            font-weight: 600;
+        }
+        .preview-content code {
+            background-color: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        .preview-content pre {
+            background-color: #1e293b;
+            color: #e2e8f0;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 1em 0;
+        }
+        .preview-content pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview-header">
+        <h1 style="margin: 0; font-size: 24px;">🌐 HTML预览</h1>
+        <p style="margin: 8px 0 0 0; opacity: 0.9;">模型: ${modelName} | 生成时间: ${new Date().toLocaleString('zh-CN')}</p>
+    </div>
+    <div class="preview-content">
+        ${content}
+    </div>
+    <div class="preview-footer">
+        ⚠️ 此预览在隔离环境中渲染，某些功能可能受限 • 由模型评测系统生成
+    </div>
+</body>
+</html>`;
+
+    // 创建Blob并在新标签页中打开
+    const blob = new Blob([htmlContent], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const newWindow = window.open(url, '_blank');
+    
+    // 清理URL对象（延迟清理，确保页面加载完成）
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 1000);
   };
 
   const getScoreColor = (score: number) => {
@@ -324,9 +458,26 @@ const AnswerQuestionPage: React.FC = () => {
                                 </span>
                               </div>
                               {!isExpanded && (
-                                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
-                                  {previewText}
-                                </p>
+                                <div className="flex items-center justify-between">
+                                  <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 flex-1">
+                                    {previewText}
+                                  </p>
+                                  {answer.contentType === 'html' && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handlePreviewHTML(answer.content, answer.model?.name || '未知模型');
+                                      }}
+                                      className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors ml-2 flex-shrink-0"
+                                      title="预览HTML"
+                                    >
+                                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                      预览
+                                    </button>
+                                  )}
+                                </div>
                               )}
                             </div>
                           </div>
@@ -374,6 +525,26 @@ const AnswerQuestionPage: React.FC = () => {
                         <div className="px-4 pb-4">
                           <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
                             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+                              <div className="flex items-start justify-between mb-3">
+                                <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  答案内容
+                                </h5>
+                                {answer.contentType === 'html' && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handlePreviewHTML(answer.content, answer.model?.name || '未知模型');
+                                    }}
+                                    className="inline-flex items-center gap-1 px-3 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+                                    title="在新标签页预览HTML"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                    </svg>
+                                    预览HTML
+                                  </button>
+                                )}
+                              </div>
                               <ContentRenderer
                                 content={answer.content}
                                 contentType={answer.contentType}

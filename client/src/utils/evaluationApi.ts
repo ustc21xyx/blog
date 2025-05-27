@@ -64,6 +64,8 @@ export const evaluationApi = {
   
   scoreAnswer: (id: string, score: number) => 
     api.put(`/evaluation/answers/${id}/score`, { score }),
+  
+  deleteAnswer: (id: string) => api.delete(`/evaluation/answers/${id}`),
 
   // ========== 统计数据 ==========
   getLeaderboard: () => api.get('/evaluation/leaderboard')

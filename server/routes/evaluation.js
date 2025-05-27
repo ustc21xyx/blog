@@ -401,7 +401,7 @@ router.post('/answers', auth, [
       });
     }
 
-    const { questionId, modelId, content, contentType, renderedContent } = req.body;
+    const { questionId, modelId, content, contentType, renderedContent, score } = req.body;
 
     // 验证题目和模型是否存在
     const question = await EvaluationQuestion.findById(questionId);
@@ -427,12 +427,16 @@ router.post('/answers', auth, [
       content: content.trim(),
       contentType: contentType || 'text',
       renderedContent: renderedContent?.trim(),
+      score: score || 3, // 设置初始评分
       submittedBy: req.user._id,
       version: 1
     });
 
     await answer.save();
-    await answer.populate(['modelId', 'submittedBy']);
+    await answer.populate([
+      { path: 'modelId', select: 'name version provider color' },
+      { path: 'submittedBy', select: 'username displayName' }
+    ]);
 
     res.status(201).json({
       message: 'Answer submitted successfully',
@@ -478,6 +482,44 @@ router.put('/answers/:id/score', auth, [
   } catch (error) {
     console.error('Score answer error:', error);
     res.status(500).json({ message: 'Failed to score answer' });
+  }
+});
+
+// 删除答案
+router.delete('/answers/:id', auth, [
+  param('id').isMongoId().withMessage('Invalid answer ID')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const answer = await ModelAnswer.findById(req.params.id)
+      .populate('submittedBy', 'username displayName');
+    
+    if (!answer) {
+      return res.status(404).json({ message: 'Answer not found' });
+    }
+
+    // 检查权限：只有答案提交者或管理员可以删除
+    if (answer.submittedBy._id.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ message: 'Permission denied' });
+    }
+
+    // 软删除：设置为非活跃
+    answer.isActive = false;
+    await answer.save();
+
+    res.json({
+      message: 'Answer deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete answer error:', error);
+    res.status(500).json({ message: 'Failed to delete answer' });
   }
 });
 
