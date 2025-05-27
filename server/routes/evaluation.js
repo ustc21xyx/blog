@@ -341,6 +341,43 @@ router.get('/questions/:id', [
   }
 });
 
+// 删除题目 (管理员)
+router.delete('/questions/:id', adminAuth, [
+  param('id').isMongoId().withMessage('Invalid question ID')
+], async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+
+    const question = await EvaluationQuestion.findById(req.params.id);
+    if (!question) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+
+    // 软删除：设置为非活跃
+    question.isActive = false;
+    await question.save();
+
+    // 同时删除相关的答案
+    await ModelAnswer.updateMany(
+      { questionId: req.params.id },
+      { isActive: false }
+    );
+
+    res.json({
+      message: 'Question deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete question error:', error);
+    res.status(500).json({ message: 'Failed to delete question' });
+  }
+});
+
 // ========== 答案管理 API ==========
 
 // 获取题目的所有答案

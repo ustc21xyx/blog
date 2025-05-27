@@ -1,5 +1,6 @@
 export interface User {
-  id: string;
+  _id: string;
+  id?: string; // 保留id字段以向后兼容
   username: string;
   email: string;
   displayName: string;
