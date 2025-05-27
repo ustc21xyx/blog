@@ -36,9 +36,19 @@ const AnswerQuestionPage: React.FC = () => {
       console.log('AnswerQuestionPage - questionRes:', questionRes);
       console.log('AnswerQuestionPage - modelsRes:', modelsRes);
       console.log('AnswerQuestionPage - answersRes:', answersRes);
-      setQuestion(questionRes.data?.question || questionRes.question || questionRes);
-      setModels(modelsRes.data?.models || modelsRes.models || []);
-      setAnswers(answersRes.data?.answers || answersRes.answers || []);
+      
+      // 解析问题数据
+      const questionData = questionRes.data?.question || questionRes.question;
+      console.log('AnswerQuestionPage - parsed question:', questionData);
+      setQuestion(questionData);
+      
+      // 解析模型数据  
+      const modelsData = modelsRes.data?.models || modelsRes.models || [];
+      setModels(modelsData);
+      
+      // 解析答案数据
+      const answersData = answersRes.data?.answers || answersRes.answers || [];
+      setAnswers(answersData);
     } catch (error) {
       console.error('Failed to fetch data:', error);
     } finally {

@@ -49,11 +49,15 @@ export const evaluationApi = {
   deleteQuestion: (id: string) => api.delete(`/evaluation/questions/${id}`),
 
   // ========== 答案管理 ==========
-  getQuestionAnswers: (questionId: string) => 
-    api.get(`/evaluation/questions/${questionId}/answers`),
+  getAnswers: (params?: { question?: string }) => {
+    if (params?.question) {
+      return api.get(`/evaluation/questions/${params.question}/answers`);
+    }
+    return api.get('/evaluation/answers');
+  },
   
-  submitAnswer: (data: SubmitAnswerForm) => 
-    api.post('/evaluation/answers', data),
+  submitAnswer: (questionId: string, modelId: string, data: SubmitAnswerForm) => 
+    api.post('/evaluation/answers', { questionId, modelId, ...data }),
   
   updateAnswer: (id: string, data: Partial<SubmitAnswerForm>) => 
     api.put(`/evaluation/answers/${id}`, data),
@@ -62,5 +66,5 @@ export const evaluationApi = {
     api.put(`/evaluation/answers/${id}/score`, { score }),
 
   // ========== 统计数据 ==========
-  getLeaderboard: () => api.get('/evaluation/leaderboard'),
+  getLeaderboard: () => api.get('/evaluation/leaderboard')
 };
