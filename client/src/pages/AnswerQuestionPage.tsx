@@ -19,7 +19,7 @@ const AnswerQuestionPage: React.FC = () => {
   const [selectedModel, setSelectedModel] = useState('');
   const [answerForm, setAnswerForm] = useState<SubmitAnswerForm>({
     content: '',
-    contentType: 'text',
+    contentType: 'markdown',
     score: 3
   });
   const [submitting, setSubmitting] = useState(false);
@@ -47,11 +47,14 @@ const AnswerQuestionPage: React.FC = () => {
       console.log('AnswerQuestionPage - parsed question:', questionData);
       setQuestion(questionData || null); // Ensure null if undefined
       
-      // 设置默认的答案内容类型为题目的内容类型
+      // 答案默认使用问题的contentType，如果是旧格式则转为markdown
       if (questionData?.contentType) {
+        const defaultContentType = ['text', 'latex', 'mixed'].includes(questionData.contentType) 
+          ? 'markdown' 
+          : questionData.contentType;
         setAnswerForm(prev => ({
           ...prev,
-          contentType: questionData.contentType
+          contentType: defaultContentType as 'markdown' | 'html'
         }));
       }
       
@@ -76,7 +79,7 @@ const AnswerQuestionPage: React.FC = () => {
     setSubmitting(true);
     try {
       await evaluationApi.submitAnswer(questionId, selectedModel, answerForm);
-      setAnswerForm({ content: '', contentType: 'text', score: 3 });
+      setAnswerForm({ content: '', contentType: 'markdown', score: 3 });
       setSelectedModel('');
       fetchData(); // 刷新答案列表
     } catch (error) {
@@ -245,10 +248,8 @@ const AnswerQuestionPage: React.FC = () => {
                     onChange={(e) => setAnswerForm({ ...answerForm, contentType: e.target.value as any })}
                     className="block w-full border border-gray-300 dark:border-gray-600 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white text-sm"
                   >
-                    <option value="text">📝 Markdown文本（支持LaTeX）</option>
-                    <option value="latex">🔢 纯LaTeX数学公式</option>
+                    <option value="markdown">📝 Markdown（支持LaTeX公式）</option>
                     <option value="html">🌐 HTML代码</option>
-                    <option value="mixed">🎨 Markdown + LaTeX</option>
                   </select>
                 </div>
                 
@@ -259,7 +260,7 @@ const AnswerQuestionPage: React.FC = () => {
                   <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
                     <Editor
                       height="280px"
-                      defaultLanguage={answerForm.contentType === 'html' ? 'html' : answerForm.contentType === 'latex' ? 'latex' : 'plaintext'}
+                      defaultLanguage={answerForm.contentType === 'html' ? 'html' : 'markdown'}
                       value={answerForm.content}
                       onChange={(value) => setAnswerForm({ ...answerForm, content: value || '' })}
                       theme={theme === 'dark' ? 'vs-dark' : 'light'}

@@ -136,7 +136,7 @@ export interface EvaluationQuestion {
   title: string;
   description?: string;
   content: string;
-  contentType: 'text' | 'latex' | 'html' | 'mixed';
+  contentType: 'markdown' | 'html' | 'text' | 'latex' | 'mixed'; // 兼容旧格式
   category: EvaluationCategory;
   difficulty: 'easy' | 'medium' | 'hard';
   maxScore?: number;
@@ -152,7 +152,7 @@ export interface ModelAnswer {
   questionId: string;
   model: EvaluationModel;
   content: string;
-  contentType: 'text' | 'latex' | 'html' | 'mixed';
+  contentType: 'markdown' | 'html' | 'text' | 'latex' | 'mixed'; // 兼容旧格式
   renderedContent?: string;
   score: number;
   scoredBy?: User;
@@ -200,7 +200,7 @@ export interface CreateQuestionForm {
   title: string;
   description?: string;
   content: string;
-  contentType: 'text' | 'latex' | 'html' | 'mixed';
+  contentType: 'markdown' | 'html'; // 问题支持两种格式
   category: string;
   difficulty: 'easy' | 'medium' | 'hard';
   tags?: string[];
@@ -208,7 +208,7 @@ export interface CreateQuestionForm {
 
 export interface SubmitAnswerForm {
   content: string;
-  contentType: 'text' | 'latex' | 'html' | 'mixed';
+  contentType: 'markdown' | 'html'; // 答案只支持markdown和html
   score: number;
 }
 

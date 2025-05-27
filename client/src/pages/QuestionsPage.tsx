@@ -137,7 +137,7 @@ const QuestionsPage: React.FC = () => {
             </button>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">评测题目管理</h1>
             <p className="mt-2 text-gray-600 dark:text-gray-400">
-              管理评测题目，支持文本、LaTeX公式和HTML内容
+              管理评测题目，支持Markdown语法和LaTeX公式
             </p>
           </div>
           {user && (
@@ -229,10 +229,8 @@ const QuestionsPage: React.FC = () => {
                         onChange={(e) => setFormData({ ...formData, contentType: e.target.value as any })}
                         className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-purple-500 focus:border-purple-500 dark:bg-gray-700 dark:text-white"
                       >
-                        <option value="text">Markdown文本（支持LaTeX公式）</option>
-                        <option value="latex">纯LaTeX数学公式</option>
+                        <option value="markdown">Markdown（支持LaTeX公式）</option>
                         <option value="html">HTML代码</option>
-                        <option value="mixed">Markdown + LaTeX</option>
                       </select>
                     </div>
                     <div>
@@ -270,12 +268,12 @@ const QuestionsPage: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      题目内容 *
+                      题目内容 * （支持Markdown语法和LaTeX公式）
                     </label>
                     <div className="border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden">
                       <Editor
                         height="300px"
-                        defaultLanguage={formData.contentType === 'html' ? 'html' : formData.contentType === 'latex' ? 'latex' : 'plaintext'}
+                        defaultLanguage="markdown"
                         value={formData.content}
                         onChange={(value) => setFormData({ ...formData, content: value || '' })}
                         theme={theme === 'dark' ? 'vs-dark' : 'light'}
