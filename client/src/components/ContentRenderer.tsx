@@ -24,21 +24,24 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ content, contentType,
 
       case 'latex':
         try {
+          console.log('LaTeX mode - rendering content:', content);
           const html = katex.renderToString(content, {
             throwOnError: false,
             displayMode: true,
             output: 'html'
           });
+          console.log('LaTeX mode - rendered HTML:', html);
           return (
             <div 
               className={`katex-display ${className}`}
-              dangerouslySetInnerHTML={{ __html: html }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }}
             />
           );
         } catch (error) {
+          console.error('LaTeX mode error:', error);
           return (
             <div className={`text-red-600 dark:text-red-400 ${className}`}>
-              LaTeX渲染错误: {content}
+              LaTeX渲染错误: {error.message || content}
             </div>
           );
         }

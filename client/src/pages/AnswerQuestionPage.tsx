@@ -47,6 +47,14 @@ const AnswerQuestionPage: React.FC = () => {
       console.log('AnswerQuestionPage - parsed question:', questionData);
       setQuestion(questionData || null); // Ensure null if undefined
       
+      // 设置默认的答案内容类型为题目的内容类型
+      if (questionData?.contentType) {
+        setAnswerForm(prev => ({
+          ...prev,
+          contentType: questionData.contentType
+        }));
+      }
+      
       // 解析模型数据  
       const modelsData = modelsRes.data?.models || [];
       setModels(modelsData);
