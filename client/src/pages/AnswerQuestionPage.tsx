@@ -233,7 +233,7 @@ const AnswerQuestionPage: React.FC = () => {
                     <option value="">请选择AI模型</option>
                     {models.map((model) => (
                       <option key={model._id} value={model._id}>
-                        {model.name} {model.version ? `v${model.version}` : ''} ({model.provider})
+                        {model.name} {model.version ? `${model.version}` : ''} ({model.provider})
                       </option>
                     ))}
                   </select>
