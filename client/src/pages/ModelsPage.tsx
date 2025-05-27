@@ -98,13 +98,6 @@ const ModelsPage: React.FC = () => {
             <p className="mt-2 text-gray-600 dark:text-gray-400">
               管理参与评测的AI模型信息
             </p>
-            {/* 调试信息 */}
-            <div className="mt-2 p-2 bg-yellow-100 dark:bg-yellow-900 rounded text-sm">
-              <p>调试信息:</p>
-              <p>当前用户: {user?.username || '未登录'}</p>
-              <p>用户角色: {user?.role || '未设置'}</p>
-              <p>是否管理员: {user?.role === 'admin' ? '是' : '否'}</p>
-            </div>
           </div>
           {user?.role === 'admin' && (
             <button

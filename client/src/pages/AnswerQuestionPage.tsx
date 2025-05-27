@@ -582,6 +582,17 @@ const AnswerQuestionPage: React.FC = () => {
                                 </button>
                               ))}
 
+                              {/* 删除按钮调试信息 */}
+                              <div className="ml-3 text-xs text-gray-500 dark:text-gray-400 bg-yellow-100 dark:bg-yellow-900 p-1 rounded">
+                                <p>删除调试:</p>
+                                <p>用户角色: {user?.role}</p>
+                                <p>用户ID: {user?.id}</p>
+                                <p>提交者ID: {answer.submittedBy?.id}</p>
+                                <p>是管理员: {user?.role === 'admin' ? '是' : '否'}</p>
+                                <p>是作者: {user?.id === answer.submittedBy?.id ? '是' : '否'}</p>
+                                <p>应显示: {(user?.role === 'admin' || user?.id === answer.submittedBy?.id) ? '是' : '否'}</p>
+                              </div>
+
                               {/* 删除按钮 */}
                               {(user?.role === 'admin' || user?.id === answer.submittedBy?.id) && (
                                 <button
