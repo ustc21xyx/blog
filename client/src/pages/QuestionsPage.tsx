@@ -354,6 +354,11 @@ const QuestionsPage: React.FC = () => {
                 </div>
               </div>
               <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                {/* 调试信息 */}
+                <div className="bg-yellow-100 dark:bg-yellow-900 p-2 mb-2 text-xs">
+                  <p><strong>ContentType:</strong> {question.contentType}</p>
+                  <p><strong>Content:</strong> {question.content?.substring(0, 100)}...</p>
+                </div>
                 <ContentRenderer
                   content={question.content}
                   contentType={question.contentType}

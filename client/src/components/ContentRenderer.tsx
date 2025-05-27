@@ -10,6 +10,10 @@ interface ContentRendererProps {
 }
 
 const ContentRenderer: React.FC<ContentRendererProps> = ({ content, contentType, className = '' }) => {
+  // 调试信息
+  console.log('ContentRenderer - contentType:', contentType);
+  console.log('ContentRenderer - content preview:', content?.substring(0, 100));
+  
   const renderContent = () => {
     switch (contentType) {
       case 'text':
@@ -49,7 +53,7 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ content, contentType,
           });
           
           // 处理 $ 包裹的公式
-          textContent = textContent.replace(/\$([^$\n]+?)\$/g, (match, latex) => {
+          textContent = textContent.replace(/\$([^$]+?)\$/g, (match, latex) => {
             try {
               return katex.renderToString(latex.trim(), {
                 throwOnError: false,
@@ -142,7 +146,7 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ content, contentType,
         });
         
         // 最后处理 $ 包裹的公式（单个美元符号，内联模式）
-        processedContent = processedContent.replace(/\$([^$\n]+?)\$/g, (match, latex) => {
+        processedContent = processedContent.replace(/\$([^$]+?)\$/g, (match, latex) => {
           try {
             return katex.renderToString(latex.trim(), {
               throwOnError: false,
