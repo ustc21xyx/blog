@@ -618,14 +618,16 @@ router.get('/leaderboard', async (req, res) => {
       }
     ]);
 
-    // 添加排名
-    leaderboard.forEach((model, index) => {
-      model.rank = index + 1;
-    });
+    // 添加排名并转换字段名
+    const transformedLeaderboard = leaderboard.map((model, index) => ({
+      ...model,
+      modelId: model._id, // 将 _id 重命名为 modelId
+      rank: index + 1
+    }));
 
     res.json({
       success: true,
-      leaderboard
+      leaderboard: transformedLeaderboard
     });
   } catch (error) {
     console.error('Get leaderboard error:', error);
