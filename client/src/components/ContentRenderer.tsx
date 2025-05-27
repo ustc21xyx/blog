@@ -7,7 +7,7 @@ import DOMPurify from 'dompurify';
 
 interface ContentRendererProps {
   content: string;
-  contentType: 'markdown' | 'html';
+  contentType: 'markdown' | 'html' | 'text' | 'latex' | 'mixed';
   className?: string;
 }
 
@@ -21,8 +21,10 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ content, contentType,
       case 'text':     // 兼容旧数据
       case 'latex':    // 兼容旧数据
       case 'mixed':    // 兼容旧数据
-      default:
+      default:         // 默认将未知或兼容类型作为 markdown 处理
         // Markdown模式：支持完整Markdown语法和LaTeX数学公式
+        // 如果 contentType 是 'html'，它将被下面的 'case: html' 捕获。
+        // 所有其他类型 (markdown, text, latex, mixed, 或任何未明确列出的) 将在此处作为 markdown 处理。
         return (
           <div className={`prose dark:prose-invert max-w-none ${className}`}>
             <ReactMarkdown
@@ -30,13 +32,13 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ content, contentType,
               rehypePlugins={[rehypeKatex]}
               components={{
                 // 自定义代码块样式
-                code: ({ node, inline, className, children, ...props }) => {
+                code: ({ node, inline, className: propClassName, children, ...props }: { node?: any; inline?: boolean; className?: string; children?: React.ReactNode }) => {
                   return inline ? (
-                    <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm" {...props}>
+                    <code className={`bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-sm ${propClassName || ''}`} {...props}>
                       {children}
                     </code>
                   ) : (
-                    <code className="block bg-gray-100 dark:bg-gray-800 p-3 rounded overflow-x-auto" {...props}>
+                    <code className={`block bg-gray-100 dark:bg-gray-800 p-3 rounded overflow-x-auto ${propClassName || ''}`} {...props}>
                       {children}
                     </code>
                   );
@@ -59,6 +61,18 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ content, contentType,
                     {children}
                   </td>
                 ),
+                // Custom paragraph renderer to handle single characters
+                p: (paragraph: any) => { // Added 'any' for now, consider defining a more specific type
+                  const { node } = paragraph;
+                  if (node && node.children && node.children.length === 1) {
+                    const childNode = node.children[0];
+                    if (childNode.type === 'text' && typeof childNode.value === 'string' && childNode.value.length === 1 && /^[a-zA-Z]$/.test(childNode.value)) {
+                      // Render single letters as a span with a specific class
+                      return <span className="single-char-paragraph">{paragraph.children}</span>;
+                    }
+                  }
+                  return <p>{paragraph.children}</p>;
+                },
               }}
             >
               {content}
