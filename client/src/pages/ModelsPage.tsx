@@ -28,7 +28,7 @@ const ModelsPage: React.FC = () => {
       const response = await evaluationApi.getModels();
       console.log('Fetched models response:', response); // 调试日志
       // API响应在 response.data 中
-      const models = response.data?.models || response.models || [];
+      const models = response.data?.models || [];
       console.log('Models data:', models); // 调试日志
       setModels(models);
     } catch (error) {
@@ -98,6 +98,13 @@ const ModelsPage: React.FC = () => {
             <p className="mt-2 text-gray-600 dark:text-gray-400">
               管理参与评测的AI模型信息
             </p>
+            {/* 调试信息 */}
+            <div className="mt-2 p-2 bg-yellow-100 dark:bg-yellow-900 rounded text-sm">
+              <p>调试信息:</p>
+              <p>当前用户: {user?.username || '未登录'}</p>
+              <p>用户角色: {user?.role || '未设置'}</p>
+              <p>是否管理员: {user?.role === 'admin' ? '是' : '否'}</p>
+            </div>
           </div>
           {user?.role === 'admin' && (
             <button
