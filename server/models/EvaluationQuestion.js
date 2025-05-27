@@ -17,6 +17,11 @@ const evaluationQuestionSchema = new mongoose.Schema({
     required: true,
     maxLength: 10000
   },
+  contentType: {
+    type: String,
+    enum: ['text', 'latex', 'html', 'mixed'],
+    default: 'text'
+  },
   category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'EvaluationCategory',

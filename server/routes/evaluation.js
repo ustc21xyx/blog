@@ -268,7 +268,11 @@ router.post('/questions', auth, [
   body('difficulty')
     .optional()
     .isIn(['easy', 'medium', 'hard'])
-    .withMessage('Difficulty must be easy, medium, or hard')
+    .withMessage('Difficulty must be easy, medium, or hard'),
+  body('contentType')
+    .optional()
+    .isIn(['text', 'latex', 'html', 'mixed'])
+    .withMessage('Content type must be text, latex, html, or mixed')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -279,7 +283,7 @@ router.post('/questions', auth, [
       });
     }
 
-    const { title, description, content, category, difficulty, tags } = req.body;
+    const { title, description, content, category, difficulty, tags, contentType } = req.body;
 
     // 验证分类是否存在
     const categoryExists = await EvaluationCategory.findById(category);
@@ -291,6 +295,7 @@ router.post('/questions', auth, [
       title: title.trim(),
       description: description?.trim(),
       content: content.trim(),
+      contentType: contentType || 'text',
       category,
       difficulty: difficulty || 'medium',
       tags: tags || [],
