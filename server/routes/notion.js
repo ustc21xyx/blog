@@ -164,13 +164,43 @@ router.post('/export', auth, async (req, res) => {
 
     for (const post of posts) {
       try {
+        // First, try to find a suitable parent page or database
+        let parentConfig;
+        
+        try {
+          // Search for accessible pages first
+          const searchResponse = await notion.search({
+            filter: {
+              value: 'page',
+              property: 'object'
+            },
+            page_size: 1
+          });
+          
+          if (searchResponse.results.length > 0) {
+            // Use the first accessible page as parent
+            parentConfig = {
+              type: 'page_id',
+              page_id: searchResponse.results[0].id
+            };
+          } else {
+            // If no pages found, try to use workspace
+            parentConfig = {
+              type: 'workspace',
+              workspace: true
+            };
+          }
+        } catch (searchError) {
+          console.log('Search failed, using workspace as parent:', searchError.message);
+          parentConfig = {
+            type: 'workspace',
+            workspace: true
+          };
+        }
+
         // Create a simple page in the user's workspace
-        // Since we don't have a specific database, we'll create individual pages
         const page = await notion.pages.create({
-          parent: {
-            type: 'page_id',
-            page_id: integration.workspaceId // This might need adjustment based on Notion's structure
-          },
+          parent: parentConfig,
           properties: {
             title: {
               title: [
@@ -237,11 +267,20 @@ router.post('/export', auth, async (req, res) => {
         console.error(`Error exporting post ${post.title}:`, error);
         failedCount++;
 
+        let errorMessage = error.message;
+        if (error.code === 'object_not_found') {
+          errorMessage = 'Target page not found. Please check if the page exists and is accessible.';
+        } else if (error.code === 'unauthorized') {
+          errorMessage = 'Access denied. Please ensure your Notion integration has proper permissions.';
+        } else if (error.code === 'validation_error') {
+          errorMessage = 'Invalid data format. The page structure may not be compatible.';
+        }
+
         integration.syncHistory.push({
           type: 'export',
           title: `Failed to export: ${post.title}`,
           status: 'failed',
-          error: error.message,
+          error: errorMessage,
           metadata: {
             blogPostId: post._id.toString()
           }
@@ -328,8 +367,22 @@ router.post('/import', auth, async (req, res) => {
     const notion = new Client({ auth: integration.accessToken });
 
     try {
-      // Get page info
-      const page = await notion.pages.retrieve({ page_id: pageId });
+      // Get page info with better error handling
+      let page;
+      try {
+        page = await notion.pages.retrieve({ page_id: pageId });
+      } catch (retrieveError) {
+        if (retrieveError.code === 'object_not_found') {
+          return res.status(404).json({
+            message: 'Page not found. Make sure the page exists and your Notion integration has access to it.'
+          });
+        } else if (retrieveError.code === 'unauthorized') {
+          return res.status(403).json({
+            message: 'Access denied. Please make sure your Notion integration has been granted access to this page.'
+          });
+        }
+        throw retrieveError;
+      }
       
       // Get page title
       const title = page.properties?.title?.title?.[0]?.plain_text || 
