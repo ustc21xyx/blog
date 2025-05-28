@@ -164,50 +164,19 @@ router.post('/export', auth, async (req, res) => {
 
     for (const post of posts) {
       try {
-        // First, try to find a suitable parent page or database
-        let parentConfig;
-        
-        try {
-          // Search for accessible pages first
-          const searchResponse = await notion.search({
-            filter: {
-              value: 'page',
-              property: 'object'
-            },
-            page_size: 1
-          });
-          
-          if (searchResponse.results.length > 0) {
-            // Use the first accessible page as parent
-            parentConfig = {
-              type: 'page_id',
-              page_id: searchResponse.results[0].id
-            };
-          } else {
-            // If no pages found, try to use workspace
-            parentConfig = {
-              type: 'workspace',
-              workspace: true
-            };
-          }
-        } catch (searchError) {
-          console.log('Search failed, using workspace as parent:', searchError.message);
-          parentConfig = {
+        // Create a page directly in the workspace root (most visible location)
+        const page = await notion.pages.create({
+          parent: {
             type: 'workspace',
             workspace: true
-          };
-        }
-
-        // Create a simple page in the user's workspace
-        const page = await notion.pages.create({
-          parent: parentConfig,
+          },
           properties: {
             title: {
               title: [
                 {
                   type: 'text',
                   text: {
-                    content: post.title
+                    content: `📝 ${post.title} - 来自博客`
                   }
                 }
               ]
@@ -216,13 +185,104 @@ router.post('/export', auth, async (req, res) => {
           children: [
             {
               object: 'block',
+              type: 'heading_2',
+              heading_2: {
+                rich_text: [
+                  {
+                    type: 'text',
+                    text: {
+                      content: '📄 博客文章信息'
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              object: 'block',
               type: 'paragraph',
               paragraph: {
                 rich_text: [
                   {
                     type: 'text',
                     text: {
-                      content: post.excerpt || post.content.substring(0, 200)
+                      content: `作者: ${post.author.displayName || post.author.username}`
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              object: 'block',
+              type: 'paragraph',
+              paragraph: {
+                rich_text: [
+                  {
+                    type: 'text',
+                    text: {
+                      content: `分类: ${post.category}`
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              object: 'block',
+              type: 'paragraph',
+              paragraph: {
+                rich_text: [
+                  {
+                    type: 'text',
+                    text: {
+                      content: `标签: ${post.tags.join(', ') || '无'}`
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              object: 'block',
+              type: 'paragraph',
+              paragraph: {
+                rich_text: [
+                  {
+                    type: 'text',
+                    text: {
+                      content: `发布时间: ${new Date(post.publishedAt || post.createdAt).toLocaleString('zh-CN')}`
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              object: 'block',
+              type: 'divider',
+              divider: {}
+            },
+            {
+              object: 'block',
+              type: 'heading_2',
+              heading_2: {
+                rich_text: [
+                  {
+                    type: 'text',
+                    text: {
+                      content: '📖 文章内容'
+                    }
+                  }
+                ]
+              }
+            },
+            {
+              object: 'block',
+              type: 'paragraph',
+              paragraph: {
+                rich_text: [
+                  {
+                    type: 'text',
+                    text: {
+                      content: post.content.length > 2000 ?
+                        post.content.substring(0, 2000) + '\n\n[内容过长，已截断...]' :
+                        post.content
                     }
                   }
                 ]
@@ -241,7 +301,11 @@ router.post('/export', auth, async (req, res) => {
                   {
                     type: 'text',
                     text: {
-                      content: post.content.substring(0, 2000) // Notion has limits
+                      content: '🔗 此内容由博客系统自动导出'
+                    },
+                    annotations: {
+                      italic: true,
+                      color: 'gray'
                     }
                   }
                 ]
@@ -255,11 +319,12 @@ router.post('/export', auth, async (req, res) => {
         // Add to sync history
         integration.syncHistory.push({
           type: 'export',
-          title: `Exported: ${post.title}`,
+          title: `导出成功: ${post.title}`,
           status: 'success',
           metadata: {
             blogPostId: post._id.toString(),
             notionPageId: page.id,
+            notionPageUrl: page.url,
             itemCount: 1
           }
         });
@@ -292,9 +357,10 @@ router.post('/export', auth, async (req, res) => {
     await integration.save();
 
     res.json({
-      message: `Export completed: ${successCount} successful, ${failedCount} failed`,
+      message: `导出完成: ${successCount} 篇文章成功，${failedCount} 篇失败。请在Notion工作区的根目录查找以"📝"开头的页面。`,
       count: successCount,
-      failed: failedCount
+      failed: failedCount,
+      tip: '在Notion中查找标题以"📝"开头的页面，这些是从博客导出的文章。'
     });
   } catch (error) {
     console.error('Error exporting to Notion:', error);
