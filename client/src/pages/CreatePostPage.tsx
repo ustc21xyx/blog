@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { blogApi } from '../utils/api';
 import type { CreatePostForm } from '../types';
+import ContentRenderer from '../components/ContentRenderer';
 
 const CreatePostPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -264,10 +265,23 @@ const CreatePostPage = () => {
               </label>
               {isPreview ? (
                 <div className="anime-card p-6 min-h-64">
-                  <h2 className="text-2xl font-heading font-bold mb-4 text-gray-900 dark:text-white">{watchedTitle}</h2>
-                  <div className="whitespace-pre-wrap text-gray-700 dark:text-gray-300 leading-relaxed">
-                    {watchedContent}
+                  <div className="mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+                    <h2 className="text-3xl font-heading font-bold anime-gradient-text mb-2">
+                      <span className="mr-2">🌟</span>
+                      {watchedTitle || 'Preview Title'}
+                      <span className="ml-2">🌟</span>
+                    </h2>
+                    <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+                      <span className="mr-2">📝</span>
+                      <span>预览模式</span>
+                      <span className="ml-4 mr-2">🌸</span>
+                      <span>实时渲染</span>
+                    </div>
                   </div>
+                  <ContentRenderer
+                    content={watchedContent || '*开始输入内容来查看预览效果...*'}
+                    contentType="markdown"
+                  />
                 </div>
               ) : (
                 <textarea

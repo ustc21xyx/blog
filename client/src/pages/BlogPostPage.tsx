@@ -3,11 +3,11 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Calendar, Eye, Heart, MessageCircle, Edit, Trash2, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
-import ReactMarkdown from 'react-markdown';
 import toast from 'react-hot-toast';
 import { blogApi } from '../utils/api';
 import { useAuthStore } from '../store/authStore';
 import type { BlogPost } from '../types';
+import ContentRenderer from '../components/ContentRenderer';
 
 const BlogPostPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -258,9 +258,12 @@ const BlogPostPage = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="blog-content mb-12"
+          className="mb-12"
         >
-          <ReactMarkdown>{post.content}</ReactMarkdown>
+          <ContentRenderer
+            content={post.content}
+            contentType="markdown"
+          />
         </motion.div>
 
         {/* Comments Section */}
