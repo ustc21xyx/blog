@@ -178,6 +178,78 @@ const createSafeRichTextBlock = (text, maxLength = 1800) => {
   };
 };
 
+// Helper function to create content blocks from text
+const createContentBlocks = (content) => {
+  const blocks = [];
+  
+  if (!content || typeof content !== 'string') {
+    return blocks;
+  }
+  
+  // Split content into paragraphs
+  const paragraphs = content.split(/\n\s*\n/).filter(p => p.trim());
+  
+  for (const paragraph of paragraphs) {
+    const cleanParagraph = cleanContentForNotion(paragraph);
+    
+    if (cleanParagraph.length === 0) continue;
+    
+    // Split long paragraphs into chunks
+    const chunks = splitTextIntoChunks(cleanParagraph, 1800);
+    
+    for (const chunk of chunks) {
+      blocks.push({
+        object: 'block',
+        type: 'paragraph',
+        paragraph: {
+          rich_text: [
+            {
+              type: 'text',
+              text: {
+                content: chunk
+              }
+            }
+          ]
+        }
+      });
+    }
+  }
+  
+  return blocks;
+};
+
+// Helper function to split text into chunks
+const splitTextIntoChunks = (text, maxLength) => {
+  if (text.length <= maxLength) {
+    return [text];
+  }
+  
+  const chunks = [];
+  let currentChunk = '';
+  const sentences = text.split(/[。！？.!?]/);
+  
+  for (const sentence of sentences) {
+    if ((currentChunk + sentence).length <= maxLength) {
+      currentChunk += sentence;
+    } else {
+      if (currentChunk) {
+        chunks.push(currentChunk.trim());
+        currentChunk = sentence;
+      } else {
+        // If single sentence is too long, force split
+        chunks.push(sentence.substring(0, maxLength));
+        currentChunk = sentence.substring(maxLength);
+      }
+    }
+  }
+  
+  if (currentChunk.trim()) {
+    chunks.push(currentChunk.trim());
+  }
+  
+  return chunks.filter(chunk => chunk.length > 0);
+};
+
 // Export blog posts to Notion
 router.post('/export', auth, async (req, res) => {
   try {
@@ -195,6 +267,23 @@ router.post('/export', auth, async (req, res) => {
 
     const notion = new Client({ auth: integration.accessToken });
 
+    // First, verify the workspace access
+    try {
+      const workspaces = await notion.search({
+        filter: {
+          value: 'page',
+          property: 'object'
+        },
+        page_size: 1
+      });
+    } catch (error) {
+      console.error('Workspace access error:', error);
+      return res.status(400).json({ 
+        message: '无法访问Notion工作区。请检查集成权限。',
+        error: error.message 
+      });
+    }
+
     // Get blog posts to export
     const query = { author: userId, isPublished: true };
     if (postId) {
@@ -208,179 +297,136 @@ router.post('/export', auth, async (req, res) => {
     }
 
     let successCount = 0;
-    let failedCount = 0;
+    let errors = [];
 
     for (const post of posts) {
       try {
-        // Validate and clean data before sending to Notion
-        const cleanTitle = cleanContentForNotion(post.title || 'Untitled').substring(0, 100);
+        // Clean and validate content
+        const cleanTitle = cleanContentForNotion(post.title || '无标题');
         const cleanContent = cleanContentForNotion(post.content || '');
-        const authorName = cleanContentForNotion(post.author?.displayName || post.author?.username || 'Unknown');
-        const category = post.category || 'other';
-        const tags = Array.isArray(post.tags) ? 
-          post.tags.filter(tag => tag && typeof tag === 'string' && tag.trim()).slice(0, 5) : [];
-        const publishedDate = post.publishedAt || post.createdAt || new Date();
         
-        // Create content blocks with better error handling
-        const contentBlocks = [];
+        // Create page properties with correct format
+        const pageProperties = {
+          title: {
+            title: [
+              {
+                type: 'text',
+                text: {
+                  content: cleanTitle.substring(0, 2000) // Notion title limit
+                }
+              }
+            ]
+          }
+        };
+
+        // Create children blocks for content
+        const children = [];
         
-        // Add metadata block first
-        const metadataText = `📝 博客文章信息
-作者: ${authorName}
-分类: ${category}
-标签: ${tags.join(', ') || '无'}
-发布时间: ${publishedDate.toLocaleDateString('zh-CN')}`;
-        
-        contentBlocks.push({
+        // Add metadata block
+        children.push({
           object: 'block',
-          type: 'callout',
-          callout: {
+          type: 'paragraph',
+          paragraph: {
             rich_text: [
               {
                 type: 'text',
                 text: {
-                  content: metadataText
+                  content: `作者: ${post.author?.displayName || post.author?.username || '未知'}`
                 }
               }
-            ],
-            icon: {
-              type: 'emoji',
-              emoji: '📝'
-            },
-            color: 'blue_background'
+            ]
           }
         });
 
-        // Process content into blocks
-        if (cleanContent) {
-          // Split content by double newlines (paragraphs)
-          const paragraphs = cleanContent.split(/\n\s*\n/).filter(p => p.trim());
-          
-          for (const paragraph of paragraphs.slice(0, 90)) { // Limit to 90 content blocks + 10 for metadata
-            const block = createSafeRichTextBlock(paragraph);
-            if (block) {
-              contentBlocks.push(block);
-            }
-          }
-        }
-
-        // If no content blocks were created, add a default one
-        if (contentBlocks.length === 1) { // Only metadata block
-          contentBlocks.push({
-            object: 'block',
-            type: 'paragraph',
-            paragraph: {
-              rich_text: [
-                {
-                  type: 'text',
-                  text: {
-                    content: '此文章暂无内容。'
-                  }
+        children.push({
+          object: 'block',
+          type: 'paragraph',
+          paragraph: {
+            rich_text: [
+              {
+                type: 'text',
+                text: {
+                  content: `发布时间: ${post.createdAt ? new Date(post.createdAt).toLocaleDateString('zh-CN') : '未知'}`
                 }
-              ]
-            }
-          });
+              }
+            ]
+          }
+        });
+
+        // Add content blocks
+        if (cleanContent) {
+          const contentBlocks = createContentBlocks(cleanContent);
+          children.push(...contentBlocks);
         }
 
-        // Ensure we don't exceed Notion's limits
-        const finalBlocks = contentBlocks.slice(0, 100);
-
-        // Create page with proper structure and validation
+        // Create the page with workspace as parent
         const pageData = {
           parent: {
             type: 'workspace',
             workspace: true
           },
-          properties: {
-            title: {
-              title: [
-                {
-                  text: {
-                    content: `📝 ${cleanTitle}`
-                  }
-                }
-              ]
-            }
-          },
-          children: finalBlocks
+          properties: pageProperties,
+          children: children.slice(0, 100) // Notion API limit for children in create request
         };
 
-        // Validate the page data structure
-        if (!pageData.properties.title.title[0].text.content) {
-          throw new Error('Title cannot be empty');
+        console.log('Creating page with data:', JSON.stringify(pageData, null, 2));
+
+        const response = await notion.pages.create(pageData);
+        
+        // If there are more content blocks, add them separately
+        if (children.length > 100) {
+          const remainingBlocks = children.slice(100);
+          for (let i = 0; i < remainingBlocks.length; i += 100) {
+            const blockChunk = remainingBlocks.slice(i, i + 100);
+            await notion.blocks.children.append({
+              block_id: response.id,
+              children: blockChunk
+            });
+          }
         }
-
-        console.log(`Creating Notion page for post: ${cleanTitle}`);
-        console.log(`Content blocks count: ${finalBlocks.length}`);
-
-        const page = await notion.pages.create(pageData);
 
         successCount++;
-
-        // Add to sync history
-        integration.syncHistory.push({
-          type: 'export',
-          title: `导出成功: ${cleanTitle}`,
-          status: 'success',
-          metadata: {
-            blogPostId: post._id.toString(),
-            notionPageId: page.id,
-            notionPageUrl: page.url,
-            itemCount: 1
-          }
-        });
-
+        console.log(`Successfully exported: ${post.title}`);
+        
       } catch (error) {
-        console.error(`Error exporting post ${post.title}:`, error);
-        console.error('Error details:', {
-          code: error.code,
-          status: error.status,
-          body: error.body,
-          message: error.message
-        });
-        failedCount++;
-
-        let errorMessage = error.message;
-        if (error.code === 'object_not_found') {
-          errorMessage = '目标页面未找到。请检查页面是否存在且可访问。';
-        } else if (error.code === 'unauthorized') {
-          errorMessage = '访问被拒绝。请确保您的Notion集成具有适当的权限。';
-        } else if (error.code === 'validation_error') {
-          errorMessage = '数据格式无效。页面结构可能不兼容。请检查文章内容格式。';
-        } else if (error.code === 'invalid_request_url') {
-          errorMessage = 'Notion API请求无效。请检查集成配置。';
-        } else if (error.body && error.body.message) {
-          errorMessage = error.body.message;
-        } else if (error.status === 400) {
-          errorMessage = '请求格式错误。文章内容可能包含不支持的字符或格式。';
-        } else if (error.status === 429) {
-          errorMessage = 'API请求频率过高，请稍后重试。';
-        }
-
-        integration.syncHistory.push({
-          type: 'export',
-          title: `导出失败: ${post.title}`,
-          status: 'failed',
-          error: errorMessage,
-          metadata: {
-            blogPostId: post._id.toString()
-          }
+        console.error(`Failed to export post "${post.title}":`, error);
+        errors.push({
+          title: post.title,
+          error: error.message,
+          code: error.code
         });
       }
     }
 
-    integration.lastSyncAt = new Date();
-    await integration.save();
+    // Update integration stats
+    await NotionIntegration.findByIdAndUpdate(integration._id, {
+      $inc: { 
+        exportCount: successCount,
+        lastExportAt: new Date()
+      }
+    });
+
+    if (successCount === 0) {
+      return res.status(400).json({
+        message: '导出失败。所有文章都无法导出到Notion。',
+        errors: errors
+      });
+    }
 
     res.json({
-      message: `导出完成: ${successCount} 篇文章成功，${failedCount} 篇失败。请在Notion工作区的根目录查找以"📝"开头的页面。`,
-      count: successCount,
-      failed: failedCount,
-      tip: '在Notion中查找标题以"📝"开头的页面，这些是从博客导出的文章。'
+      message: `成功导出 ${successCount} 篇文章到Notion`,
+      successCount,
+      totalAttempted: posts.length,
+      errors: errors.length > 0 ? errors : undefined
     });
+
   } catch (error) {
-    console.error('Error exporting to Notion:', error);
-    res.status(500).json({ message: error.message || 'Failed to export to Notion' });
+    console.error('Notion export error:', error);
+    res.status(500).json({ 
+      message: '导出到Notion时发生错误',
+      error: error.message,
+      code: error.code
+    });
   }
 });
 
