@@ -31,23 +31,19 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ content, contentType,
               remarkPlugins={[remarkMath]}
               rehypePlugins={[rehypeKatex]}
               components={{
-                // 自定义标题样式 - 添加kawaii元素
+                // 自定义标题样式 - 简洁优雅
                 h1: ({ children }) => (
-                  <h1 className="text-3xl font-bold mb-6 anime-gradient-text relative">
-                    <span className="mr-2">🌟</span>
+                  <h1 className="text-3xl font-bold mb-6 anime-gradient-text">
                     {children}
-                    <span className="ml-2">🌟</span>
                   </h1>
                 ),
                 h2: ({ children }) => (
-                  <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-200 relative flex items-center">
-                    <span className="mr-2 text-anime-pink-500">✨</span>
+                  <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-200">
                     {children}
                   </h2>
                 ),
                 h3: ({ children }) => (
-                  <h3 className="text-xl font-medium mb-3 text-gray-700 dark:text-gray-300 flex items-center">
-                    <span className="mr-2 text-anime-purple-500">💫</span>
+                  <h3 className="text-xl font-medium mb-3 text-gray-700 dark:text-gray-300">
                     {children}
                   </h3>
                 ),
