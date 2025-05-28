@@ -361,6 +361,7 @@ router.post('/export', auth, async (req, res) => {
 
     let successCount = 0;
     let errors = [];
+    let successfulExports = [];
 
     for (const post of posts) {
       try {
@@ -443,6 +444,14 @@ router.post('/export', auth, async (req, res) => {
 
         const response = await notion.pages.create(pageData);
         
+        // Verify the page was created by trying to retrieve it
+        try {
+          const verifyPage = await notion.pages.retrieve({ page_id: response.id });
+          console.log(`Verified page creation: ${verifyPage.id}`);
+        } catch (verifyError) {
+          console.error(`Failed to verify page creation:`, verifyError);
+        }
+        
         // If there are more content blocks, add them separately
         if (children.length > 100) {
           const remainingBlocks = children.slice(100);
@@ -456,7 +465,15 @@ router.post('/export', auth, async (req, res) => {
         }
 
         successCount++;
-        console.log(`Successfully exported: ${post.title}`);
+        console.log(`Successfully exported: ${post.title} - Page ID: ${response.id}`);
+        console.log(`Page URL: ${response.url}`);
+        
+        // Store the successful export info
+        successfulExports.push({
+          title: post.title,
+          pageId: response.id,
+          pageUrl: response.url
+        });
         
       } catch (error) {
         console.error(`Failed to export post "${post.title}":`, error);
@@ -488,6 +505,9 @@ router.post('/export', auth, async (req, res) => {
       successCount,
       totalAttempted: posts.length,
       databaseId: targetDatabaseId,
+      databaseUrl: `https://www.notion.so/${targetDatabaseId.replace(/-/g, '')}`,
+      instructions: '请在Notion中查找名为"Blog Posts"的数据库，或点击上面的链接直接访问',
+      successfulExports: successfulExports,
       errors: errors.length > 0 ? errors : undefined
     });
 
@@ -744,6 +764,91 @@ router.get('/test', auth, async (req, res) => {
   } catch (error) {
     console.error('Error testing connection:', error);
     res.status(500).json({ message: error.message || 'Connection test failed' });
+  }
+});
+
+// Check exported content in Notion
+router.get('/check-exports', auth, async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const integration = await NotionIntegration.findOne({ 
+      userId,
+      isActive: true 
+    });
+
+    if (!integration) {
+      return res.status(400).json({ message: 'Notion integration not found' });
+    }
+
+    const notion = new Client({ auth: integration.accessToken });
+
+    // Search for databases
+    const databaseSearch = await notion.search({
+      filter: {
+        value: 'database',
+        property: 'object'
+      }
+    });
+
+    // Search for pages with blog-related titles
+    const pageSearch = await notion.search({
+      query: '待办更新'
+    });
+
+    // Get all accessible content
+    const allSearch = await notion.search({
+      page_size: 50
+    });
+
+    const databases = databaseSearch.results.map(db => ({
+      id: db.id,
+      title: db.title?.[0]?.plain_text || 'Untitled Database',
+      url: `https://www.notion.so/${db.id.replace(/-/g, '')}`,
+      type: 'database',
+      lastEditedTime: db.last_edited_time
+    }));
+
+    const pages = pageSearch.results.map(page => ({
+      id: page.id,
+      title: page.properties?.title?.title?.[0]?.plain_text || 
+             page.properties?.Name?.title?.[0]?.plain_text ||
+             'Untitled Page',
+      url: page.url,
+      type: 'page',
+      lastEditedTime: page.last_edited_time
+    }));
+
+    const allContent = allSearch.results.map(item => ({
+      id: item.id,
+      title: item.object === 'database' 
+        ? (item.title?.[0]?.plain_text || 'Untitled Database')
+        : (item.properties?.title?.title?.[0]?.plain_text || 
+           item.properties?.Name?.title?.[0]?.plain_text ||
+           'Untitled'),
+      url: item.url || `https://www.notion.so/${item.id.replace(/-/g, '')}`,
+      type: item.object,
+      lastEditedTime: item.last_edited_time
+    }));
+
+    res.json({
+      message: '以下是您Notion工作区中可访问的内容',
+      databases: databases,
+      blogPages: pages,
+      allContent: allContent.slice(0, 20), // 限制返回数量
+      tips: [
+        '如果看不到导出的内容，请检查Notion集成是否有访问相应页面的权限',
+        '在Notion中，点击页面右上角的"..."菜单，选择"连接"来添加集成权限',
+        '导出的文章会出现在"Blog Posts"数据库中，如果没有会自动创建'
+      ]
+    });
+
+  } catch (error) {
+    console.error('Error checking exports:', error);
+    res.status(500).json({ 
+      message: '检查导出内容时发生错误',
+      error: error.message 
+    });
   }
 });
 
