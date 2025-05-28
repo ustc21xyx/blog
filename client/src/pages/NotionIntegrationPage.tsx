@@ -53,6 +53,7 @@ const NotionIntegrationPage = () => {
   const [selectedPosts, setSelectedPosts] = useState<Set<string>>(new Set());
   const [selectedPages, setSelectedPages] = useState<Set<string>>(new Set());
   const [syncing, setSyncing] = useState(false);
+  const [lastExportResult, setLastExportResult] = useState<any>(null);
 
   useEffect(() => {
     if (!user) {
@@ -142,23 +143,67 @@ const NotionIntegrationPage = () => {
 
     setSyncing(true);
     try {
-      let successCount = 0;
-      let failedCount = 0;
+      let allSuccessfulExports: any[] = [];
+      let allErrors: any[] = [];
 
       for (const postId of selectedPosts) {
         try {
-          await notionApi.exportToNotion(postId);
-          successCount++;
-        } catch (error) {
-          failedCount++;
+          const response = await notionApi.exportToNotion(postId);
+          if (response.data.successfulExports) {
+            allSuccessfulExports.push(...response.data.successfulExports);
+          }
+          if (response.data.errors) {
+            allErrors.push(...response.data.errors);
+          }
+        } catch (error: any) {
+          allErrors.push({
+            title: '未知文章',
+            error: error.response?.data?.message || error.message
+          });
         }
       }
 
-      toast.success(`导出完成：${successCount} 成功，${failedCount} 失败`);
+      // 显示详细的导出结果
+      if (allSuccessfulExports.length > 0) {
+        const successMessage = `✅ 成功导出 ${allSuccessfulExports.length} 篇文章到Notion:\n\n` +
+          allSuccessfulExports.map(exp => 
+            `📄 ${exp.title}\n🔗 ${exp.pageUrl || '链接生成中...'}`
+          ).join('\n\n');
+        
+        // 使用自定义toast显示详细信息
+        toast.success(successMessage, {
+          duration: 8000,
+          style: {
+            maxWidth: '500px',
+            whiteSpace: 'pre-line'
+          }
+        });
+      }
+
+      if (allErrors.length > 0) {
+        const errorMessage = `❌ ${allErrors.length} 篇文章导出失败:\n\n` +
+          allErrors.map(err => `📄 ${err.title}: ${err.error}`).join('\n');
+        
+        toast.error(errorMessage, {
+          duration: 6000,
+          style: {
+            maxWidth: '500px',
+            whiteSpace: 'pre-line'
+          }
+        });
+      }
+
+      // 保存导出结果到状态中
+      setLastExportResult({
+        successfulExports: allSuccessfulExports,
+        errors: allErrors,
+        timestamp: new Date()
+      });
+
       setSelectedPosts(new Set());
       fetchSyncHistory();
     } catch (error: any) {
-      toast.error('导出失败');
+      toast.error('导出过程中发生错误: ' + (error.response?.data?.message || error.message));
     } finally {
       setSyncing(false);
     }
@@ -457,6 +502,56 @@ const NotionIntegrationPage = () => {
                       <p className="text-gray-600 dark:text-gray-400">
                         先去<a href="/create" className="text-anime-purple-600 hover:underline">创作</a>一些内容吧！
                       </p>
+                    </div>
+                  )}
+
+                  {/* 最近导出结果 */}
+                  {lastExportResult && (
+                    <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <h4 className="font-medium text-gray-900 dark:text-white mb-3">
+                        最近导出结果 ({new Date(lastExportResult.timestamp).toLocaleString()})
+                      </h4>
+                      
+                      {lastExportResult.successfulExports.length > 0 && (
+                        <div className="mb-4">
+                          <h5 className="text-sm font-medium text-green-600 dark:text-green-400 mb-2">
+                            ✅ 成功导出 ({lastExportResult.successfulExports.length})
+                          </h5>
+                          <div className="space-y-2">
+                            {lastExportResult.successfulExports.map((exp: any, index: number) => (
+                              <div key={index} className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 rounded">
+                                <span className="text-sm text-gray-700 dark:text-gray-300">{exp.title}</span>
+                                {exp.pageUrl && (
+                                  <a 
+                                    href={exp.pageUrl} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                                  >
+                                    在Notion中查看
+                                  </a>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {lastExportResult.errors.length > 0 && (
+                        <div>
+                          <h5 className="text-sm font-medium text-red-600 dark:text-red-400 mb-2">
+                            ❌ 导出失败 ({lastExportResult.errors.length})
+                          </h5>
+                          <div className="space-y-2">
+                            {lastExportResult.errors.map((err: any, index: number) => (
+                              <div key={index} className="p-2 bg-red-50 dark:bg-red-900/20 rounded">
+                                <div className="text-sm text-gray-700 dark:text-gray-300">{err.title}</div>
+                                <div className="text-xs text-red-600 dark:text-red-400">{err.error}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
