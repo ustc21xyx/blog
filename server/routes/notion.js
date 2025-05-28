@@ -294,55 +294,112 @@ router.post('/export', auth, async (req, res) => {
         targetDatabaseId = searchResponse.results[0].id;
         console.log('Found similar database:', targetDatabaseId);
       } else {
-        // Create a new database in workspace root
-        console.log('Creating new Blog Posts database in workspace root');
+        // Create a dedicated "Blog" page first, then create database under it
+        console.log('Creating dedicated Blog page and database...');
         
-        // Create a new database for blog posts directly in workspace
-        const newDatabase = await notion.databases.create({
-          parent: {
-            type: 'workspace',
-            workspace: true
-          },
-          title: [
-            {
-              type: 'text',
-              text: {
-                content: 'Blog Posts'
-              }
-            }
-          ],
-          properties: {
-            'Name': {
-              title: {}
-            },
-            'Author': {
-              rich_text: {}
-            },
-            'Published Date': {
-              date: {}
-            },
-            'Category': {
-              select: {
-                options: [
-                  { name: 'Technology', color: 'blue' },
-                  { name: 'Lifestyle', color: 'green' },
-                  { name: 'Other', color: 'gray' }
-                ]
-              }
-            }
-          }
-        });
+        // First, find a suitable parent page or create under workspace
+        let blogPageParent = { type: 'workspace', workspace: true };
         
-        targetDatabaseId = newDatabase.id;
-        console.log('Created new database in workspace root:', targetDatabaseId);
-      }
-    } catch (error) {
-      console.error('Database setup error:', error);
-      
-      // Fallback: try to create under a page if workspace creation fails
-      if (error.code === 'validation_error' || error.message.includes('workspace')) {
-        console.log('Workspace creation failed, trying to create under a page...');
         try {
+          // Try to find if there's already a "Blog" page
+          const blogPageSearch = await notion.search({
+            filter: {
+              value: 'page',
+              property: 'object'
+            },
+            query: 'Blog'
+          });
+          
+          let blogPageId = null;
+          const existingBlogPage = blogPageSearch.results.find(page => {
+            const title = page.properties?.title?.title?.[0]?.plain_text || 
+                         page.properties?.Name?.title?.[0]?.plain_text || '';
+            return title === 'Blog';
+          });
+          
+          if (existingBlogPage) {
+            blogPageId = existingBlogPage.id;
+            console.log('Found existing Blog page:', blogPageId);
+          } else {
+            // Create a new "Blog" page
+            const blogPage = await notion.pages.create({
+              parent: blogPageParent,
+              properties: {
+                title: {
+                  title: [
+                    {
+                      type: 'text',
+                      text: {
+                        content: 'Blog'
+                      }
+                    }
+                  ]
+                }
+              },
+              children: [
+                {
+                  object: 'block',
+                  type: 'paragraph',
+                  paragraph: {
+                    rich_text: [
+                      {
+                        type: 'text',
+                        text: {
+                          content: '这里存放所有博客相关的数据库和内容。'
+                        }
+                      }
+                    ]
+                  }
+                }
+              ]
+            });
+            blogPageId = blogPage.id;
+            console.log('Created new Blog page:', blogPageId);
+          }
+          
+          // Now create the Blog Posts database under the Blog page
+          const newDatabase = await notion.databases.create({
+            parent: {
+              type: 'page_id',
+              page_id: blogPageId
+            },
+            title: [
+              {
+                type: 'text',
+                text: {
+                  content: 'Blog Posts'
+                }
+              }
+            ],
+            properties: {
+              'Name': {
+                title: {}
+              },
+              'Author': {
+                rich_text: {}
+              },
+              'Published Date': {
+                date: {}
+              },
+              'Category': {
+                select: {
+                  options: [
+                    { name: 'Technology', color: 'blue' },
+                    { name: 'Lifestyle', color: 'green' },
+                    { name: 'Other', color: 'gray' }
+                  ]
+                }
+              }
+            }
+          });
+          
+          targetDatabaseId = newDatabase.id;
+          console.log('Created new Blog Posts database under Blog page:', targetDatabaseId);
+          
+        } catch (blogPageError) {
+          console.error('Failed to create Blog page, falling back to existing page method:', blogPageError);
+          
+          // Fallback: create under any available page
           const pageSearch = await notion.search({
             filter: {
               value: 'page',
@@ -353,7 +410,7 @@ router.post('/export', auth, async (req, res) => {
 
           if (pageSearch.results.length > 0) {
             const parentPageId = pageSearch.results[0].id;
-            console.log('Creating new database under page:', parentPageId);
+            console.log('Creating new database under existing page:', parentPageId);
             
             const newDatabase = await notion.databases.create({
               parent: {
@@ -391,20 +448,18 @@ router.post('/export', auth, async (req, res) => {
             });
             
             targetDatabaseId = newDatabase.id;
-            console.log('Created new database under page:', targetDatabaseId);
+            console.log('Created new database under existing page:', targetDatabaseId);
           } else {
             throw new Error('No accessible pages found in workspace');
           }
-        } catch (fallbackError) {
-          console.error('Fallback database creation failed:', fallbackError);
-          throw fallbackError;
         }
-      } else {
-        return res.status(400).json({ 
-          message: '无法设置Notion数据库。请确保集成有足够的权限。',
-          error: error.message 
-        });
       }
+    } catch (error) {
+      console.error('Database setup error:', error);
+      return res.status(400).json({ 
+        message: '无法设置Notion数据库。请确保集成有足够的权限。',
+        error: error.message 
+      });
     }
 
     // Get blog posts to export
