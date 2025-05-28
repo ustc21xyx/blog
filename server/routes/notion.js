@@ -197,128 +197,18 @@ router.post('/export', auth, async (req, res) => {
               ]
             }
           },
+          // Temporarily simplify children to isolate the issue
           children: [
             {
               object: 'block',
-              type: 'heading_2',
-              heading_2: {
-                rich_text: [
-                  {
-                    type: 'text',
-                    text: {
-                      content: '📄 博客文章信息'
-                    }
-                  }
-                ]
-              }
-            },
-            {
-              object: 'block',
               type: 'paragraph',
               paragraph: {
                 rich_text: [
                   {
                     type: 'text',
                     text: {
-                      content: `作者: ${authorName}`
-                    }
-                  }
-                ]
-              }
-            },
-            {
-              object: 'block',
-              type: 'paragraph',
-              paragraph: {
-                rich_text: [
-                  {
-                    type: 'text',
-                    text: {
-                      content: `分类: ${category}`
-                    }
-                  }
-                ]
-              }
-            },
-            {
-              object: 'block',
-              type: 'paragraph',
-              paragraph: {
-                rich_text: [
-                  {
-                    type: 'text',
-                    text: {
-                      content: `标签: ${tags.length > 0 ? tags.join(', ') : '无'}`
-                    }
-                  }
-                ]
-              }
-            },
-            {
-              object: 'block',
-              type: 'paragraph',
-              paragraph: {
-                rich_text: [
-                  {
-                    type: 'text',
-                    text: {
-                      content: `发布时间: ${new Date(publishedDate).toLocaleString('zh-CN')}`
-                    }
-                  }
-                ]
-              }
-            },
-            {
-              object: 'block',
-              type: 'divider',
-              divider: {}
-            },
-            {
-              object: 'block',
-              type: 'heading_2',
-              heading_2: {
-                rich_text: [
-                  {
-                    type: 'text',
-                    text: {
-                      content: '📖 文章内容'
-                    }
-                  }
-                ]
-              }
-            },
-            {
-              object: 'block',
-              type: 'paragraph',
-              paragraph: {
-                rich_text: [
-                  {
-                    type: 'text',
-                    text: {
-                      content: truncatedContent || '内容为空'
-                    }
-                  }
-                ]
-              }
-            },
-            {
-              object: 'block',
-              type: 'divider',
-              divider: {}
-            },
-            {
-              object: 'block',
-              type: 'paragraph',
-              paragraph: {
-                rich_text: [
-                  {
-                    type: 'text',
-                    text: {
-                      content: '🔗 此内容由博客系统自动导出'
-                    },
-                    annotations: {
-                      italic: true,
-                      color: 'gray'
+                      // Ensure even this simplified content is within limits
+                      content: (truncatedContent || '内容为空').substring(0, 1990)
                     }
                   }
                 ]
