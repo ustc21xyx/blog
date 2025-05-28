@@ -138,6 +138,16 @@ const Navbar = () => {
                             <Settings className="w-4 h-4 mr-2 text-blue-500" />
                             {t('nav.dashboard')}
                           </Link>
+                          <Link
+                            to="/notion-integration"
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 dark:hover:from-gray-700 dark:hover:to-gray-600 transition-all duration-200 rounded-lg mx-2"
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            <div className="w-4 h-4 mr-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded flex items-center justify-center">
+                              <span className="text-white text-xs font-bold">N</span>
+                            </div>
+                            Notion 集成
+                          </Link>
                           <button
                             onClick={handleLogout}
                             className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 dark:hover:from-red-900 dark:hover:to-pink-900 transition-all duration-200 rounded-lg mx-2"
@@ -245,6 +255,13 @@ const Navbar = () => {
                       onClick={() => setIsMenuOpen(false)}
                     >
                       Dashboard
+                    </Link>
+                    <Link
+                      to="/notion-integration"
+                      className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 dark:text-gray-300"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Notion 集成
                     </Link>
                     <button
                       onClick={handleLogout}

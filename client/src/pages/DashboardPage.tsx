@@ -426,13 +426,24 @@ const DashboardPage = () => {
               Here's an overview of your blog activity
             </p>
           </div>
-          <Link
-            to="/create"
-            className="anime-button-primary flex items-center space-x-2 mt-4 sm:mt-0"
-          >
-            <PenTool className="w-5 h-5" />
-            <span>Write New Post</span>
-          </Link>
+          <div className="flex items-center space-x-3 mt-4 sm:mt-0">
+            <Link
+              to="/create"
+              className="anime-button-primary flex items-center space-x-2"
+            >
+              <PenTool className="w-5 h-5" />
+              <span>Write New Post</span>
+            </Link>
+            <Link
+              to="/notion-integration"
+              className="anime-button-secondary flex items-center space-x-2"
+            >
+              <div className="w-5 h-5 bg-gradient-to-r from-purple-500 to-pink-500 rounded flex items-center justify-center">
+                <span className="text-white text-xs font-bold">N</span>
+              </div>
+              <span>Notion</span>
+            </Link>
+          </div>
         </motion.div>
 
         {/* Stats Cards */}

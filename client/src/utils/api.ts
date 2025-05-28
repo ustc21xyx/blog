@@ -102,9 +102,9 @@ export const notionApi = {
   disconnect: () => api.delete('/notion/disconnect'),
   exportToNotion: (postId?: string) => 
     api.post('/notion/export', postId ? { postId } : {}),
-  importFromNotion: () => api.post('/notion/import'),
+  importFromNotion: (pageId?: string) => api.post('/notion/import', pageId ? { pageId } : {}),
   getSyncHistory: () => api.get('/notion/sync-history'),
-  getDatabases: () => api.get('/notion/databases'),
+  getPages: () => api.get('/notion/pages'),
   testConnection: () => api.get('/notion/test'),
 };
 

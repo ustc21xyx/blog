@@ -263,18 +263,16 @@ router.post('/export', auth, async (req, res) => {
   }
 });
 
-// Import pages from Notion (simplified version)
-router.post('/import', auth, async (req, res) => {
+// Get available Notion pages
+router.get('/pages', auth, async (req, res) => {
   try {
-    const userId = req.user._id;
-
     const integration = await NotionIntegration.findOne({ 
-      userId,
+      userId: req.user._id,
       isActive: true 
     });
 
     if (!integration) {
-      return res.status(400).json({ message: 'Notion integration not found. Please connect to Notion first.' });
+      return res.status(400).json({ message: 'Notion integration not found' });
     }
 
     const notion = new Client({ auth: integration.accessToken });
@@ -289,97 +287,148 @@ router.post('/import', auth, async (req, res) => {
         direction: 'descending',
         timestamp: 'last_edited_time'
       },
-      page_size: 10
+      page_size: 20
     });
 
-    let successCount = 0;
-    let failedCount = 0;
+    const pages = searchResponse.results.map(page => ({
+      id: page.id,
+      title: page.properties?.title?.title?.[0]?.plain_text || 
+             page.properties?.Name?.title?.[0]?.plain_text ||
+             'Untitled Page',
+      lastEditedTime: page.last_edited_time,
+      url: page.url
+    }));
 
-    for (const page of searchResponse.results) {
-      try {
-        // Get page title
-        const title = page.properties?.title?.title?.[0]?.plain_text || 
-                     page.properties?.Name?.title?.[0]?.plain_text ||
-                     'Untitled from Notion';
-        
-        // Check if post already exists
-        const existingPost = await BlogPost.findOne({ 
-          title,
-          author: userId 
-        });
+    res.json({ pages });
+  } catch (error) {
+    console.error('Error fetching Notion pages:', error);
+    res.status(500).json({ message: error.message || 'Failed to fetch Notion pages' });
+  }
+});
 
-        if (existingPost) {
-          failedCount++;
-          continue;
-        }
+// Import specific page from Notion
+router.post('/import', auth, async (req, res) => {
+  try {
+    const { pageId } = req.body;
+    const userId = req.user._id;
 
-        // Get page content (simplified)
-        const blocks = await notion.blocks.children.list({
-          block_id: page.id,
-          page_size: 50
-        });
-
-        // Convert blocks to simple text
-        let content = '';
-        for (const block of blocks.results) {
-          if (block.type === 'paragraph' && block.paragraph?.rich_text) {
-            content += block.paragraph.rich_text.map(text => text.plain_text).join('') + '\n\n';
-          } else if (block.type === 'heading_1' && block.heading_1?.rich_text) {
-            content += '# ' + block.heading_1.rich_text.map(text => text.plain_text).join('') + '\n\n';
-          } else if (block.type === 'heading_2' && block.heading_2?.rich_text) {
-            content += '## ' + block.heading_2.rich_text.map(text => text.plain_text).join('') + '\n\n';
-          }
-          // Add more block types as needed
-        }
-
-        // Create blog post
-        const newPost = new BlogPost({
-          title,
-          content: content || 'Content imported from Notion',
-          excerpt: content.substring(0, 200) + (content.length > 200 ? '...' : ''),
-          author: userId,
-          category: 'other', // Use valid category
-          tags: ['notion', 'imported'],
-          isPublished: false // Import as draft first
-        });
-
-        await newPost.save();
-        successCount++;
-
-        integration.syncHistory.push({
-          type: 'import',
-          title: `Imported: ${title}`,
-          status: 'success',
-          metadata: {
-            notionPageId: page.id,
-            blogPostId: newPost._id.toString(),
-            itemCount: 1
-          }
-        });
-      } catch (error) {
-        console.error(`Error importing page:`, error);
-        failedCount++;
-
-        integration.syncHistory.push({
-          type: 'import',
-          title: `Failed to import page`,
-          status: 'failed',
-          error: error.message,
-          metadata: {
-            notionPageId: page.id
-          }
-        });
-      }
+    if (!pageId) {
+      return res.status(400).json({ message: 'Page ID is required' });
     }
 
-    integration.lastSyncAt = new Date();
-    await integration.save();
-
-    res.json({
-      message: `Import completed: ${successCount} successful, ${failedCount} failed`,
-      count: successCount,
-      failed: failedCount
+    const integration = await NotionIntegration.findOne({ 
+      userId,
+      isActive: true 
     });
+
+    if (!integration) {
+      return res.status(400).json({ message: 'Notion integration not found. Please connect to Notion first.' });
+    }
+
+    const notion = new Client({ auth: integration.accessToken });
+
+    try {
+      // Get page info
+      const page = await notion.pages.retrieve({ page_id: pageId });
+      
+      // Get page title
+      const title = page.properties?.title?.title?.[0]?.plain_text || 
+                   page.properties?.Name?.title?.[0]?.plain_text ||
+                   'Untitled from Notion';
+      
+      // Check if post already exists
+      const existingPost = await BlogPost.findOne({ 
+        title,
+        author: userId 
+      });
+
+      if (existingPost) {
+        integration.syncHistory.push({
+          type: 'import',
+          title: `Failed to import: ${title}`,
+          status: 'failed',
+          error: 'Article with this title already exists',
+          metadata: {
+            notionPageId: pageId
+          }
+        });
+        await integration.save();
+        return res.status(400).json({ message: 'Article with this title already exists' });
+      }
+
+      // Get page content
+      const blocks = await notion.blocks.children.list({
+        block_id: pageId,
+        page_size: 100
+      });
+
+      // Convert blocks to markdown
+      let content = '';
+      for (const block of blocks.results) {
+        if (block.type === 'paragraph' && block.paragraph?.rich_text) {
+          content += block.paragraph.rich_text.map(text => text.plain_text).join('') + '\n\n';
+        } else if (block.type === 'heading_1' && block.heading_1?.rich_text) {
+          content += '# ' + block.heading_1.rich_text.map(text => text.plain_text).join('') + '\n\n';
+        } else if (block.type === 'heading_2' && block.heading_2?.rich_text) {
+          content += '## ' + block.heading_2.rich_text.map(text => text.plain_text).join('') + '\n\n';
+        } else if (block.type === 'heading_3' && block.heading_3?.rich_text) {
+          content += '### ' + block.heading_3.rich_text.map(text => text.plain_text).join('') + '\n\n';
+        } else if (block.type === 'bulleted_list_item' && block.bulleted_list_item?.rich_text) {
+          content += '- ' + block.bulleted_list_item.rich_text.map(text => text.plain_text).join('') + '\n';
+        } else if (block.type === 'numbered_list_item' && block.numbered_list_item?.rich_text) {
+          content += '1. ' + block.numbered_list_item.rich_text.map(text => text.plain_text).join('') + '\n';
+        } else if (block.type === 'code' && block.code?.rich_text) {
+          content += '```\n' + block.code.rich_text.map(text => text.plain_text).join('') + '\n```\n\n';
+        }
+      }
+
+      // Create blog post
+      const newPost = new BlogPost({
+        title,
+        content: content || 'Content imported from Notion',
+        excerpt: content.substring(0, 200) + (content.length > 200 ? '...' : ''),
+        author: userId,
+        category: 'other',
+        tags: ['notion', 'imported'],
+        isPublished: false // Import as draft first
+      });
+
+      await newPost.save();
+
+      integration.syncHistory.push({
+        type: 'import',
+        title: `Imported: ${title}`,
+        status: 'success',
+        metadata: {
+          notionPageId: pageId,
+          blogPostId: newPost._id.toString(),
+          itemCount: 1
+        }
+      });
+
+      integration.lastSyncAt = new Date();
+      await integration.save();
+
+      res.json({
+        message: 'Successfully imported page from Notion',
+        post: newPost
+      });
+    } catch (error) {
+      console.error(`Error importing page ${pageId}:`, error);
+      
+      integration.syncHistory.push({
+        type: 'import',
+        title: `Failed to import page`,
+        status: 'failed',
+        error: error.message,
+        metadata: {
+          notionPageId: pageId
+        }
+      });
+      await integration.save();
+
+      throw error;
+    }
   } catch (error) {
     console.error('Error importing from Notion:', error);
     res.status(500).json({ message: error.message || 'Failed to import from Notion' });

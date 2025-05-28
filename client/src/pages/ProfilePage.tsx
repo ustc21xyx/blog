@@ -218,7 +218,10 @@ const ProfilePage = () => {
                         {post.title}
                       </h3>
                       <span className="text-sm text-gray-500 dark:text-gray-400">
-                        {format(new Date(post.publishedAt), 'MMM d, yyyy')}
+                        {post.publishedAt 
+                          ? format(new Date(post.publishedAt), 'MMM d, yyyy')
+                          : format(new Date(post.createdAt), 'MMM d, yyyy')
+                        }
                       </span>
                     </div>
                     
@@ -230,7 +233,7 @@ const ProfilePage = () => {
                     
                     <div className="flex items-center justify-between">
                       <div className="flex flex-wrap gap-2">
-                        {post.tags.slice(0, 3).map((tag) => (
+                        {post.tags && post.tags.length > 0 && post.tags.slice(0, 3).map((tag) => (
                           <span key={tag} className="tag">
                             #{tag}
                           </span>
@@ -238,9 +241,9 @@ const ProfilePage = () => {
                       </div>
                       
                       <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                        <span>{post.views} views</span>
-                        <span>{post.likeCount} likes</span>
-                        <span>{post.commentCount} comments</span>
+                        <span>{post.views || 0} views</span>
+                        <span>{post.likeCount || 0} likes</span>
+                        <span>{post.commentCount || 0} comments</span>
                       </div>
                     </div>
                   </div>
