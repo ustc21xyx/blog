@@ -164,6 +164,20 @@ router.post('/export', auth, async (req, res) => {
 
     for (const post of posts) {
       try {
+        // Validate and clean data before sending to Notion
+        const cleanTitle = (post.title || 'Untitled').toString().trim();
+        const cleanContent = (post.content || '').toString().trim();
+        const authorName = post.author?.displayName || post.author?.username || 'Unknown';
+        const category = post.category || 'other';
+        const tags = Array.isArray(post.tags) ? post.tags.filter(tag => tag && tag.trim()) : [];
+        const publishedDate = post.publishedAt || post.createdAt || new Date();
+        
+        // Ensure content fits Notion limits (2000 chars per block)
+        const maxContentLength = 1800; // Leave some buffer
+        const truncatedContent = cleanContent.length > maxContentLength ?
+          cleanContent.substring(0, maxContentLength) + '\n\n[内容过长，已截断...]' :
+          cleanContent;
+
         // Create a page directly in the workspace root (most visible location)
         const page = await notion.pages.create({
           parent: {
@@ -176,7 +190,7 @@ router.post('/export', auth, async (req, res) => {
                 {
                   type: 'text',
                   text: {
-                    content: `📝 ${post.title} - 来自博客`
+                    content: `📝 ${cleanTitle} - 来自博客`
                   }
                 }
               ]
@@ -205,7 +219,7 @@ router.post('/export', auth, async (req, res) => {
                   {
                     type: 'text',
                     text: {
-                      content: `作者: ${post.author.displayName || post.author.username}`
+                      content: `作者: ${authorName}`
                     }
                   }
                 ]
@@ -219,7 +233,7 @@ router.post('/export', auth, async (req, res) => {
                   {
                     type: 'text',
                     text: {
-                      content: `分类: ${post.category}`
+                      content: `分类: ${category}`
                     }
                   }
                 ]
@@ -233,7 +247,7 @@ router.post('/export', auth, async (req, res) => {
                   {
                     type: 'text',
                     text: {
-                      content: `标签: ${post.tags.join(', ') || '无'}`
+                      content: `标签: ${tags.length > 0 ? tags.join(', ') : '无'}`
                     }
                   }
                 ]
@@ -247,7 +261,7 @@ router.post('/export', auth, async (req, res) => {
                   {
                     type: 'text',
                     text: {
-                      content: `发布时间: ${new Date(post.publishedAt || post.createdAt).toLocaleString('zh-CN')}`
+                      content: `发布时间: ${new Date(publishedDate).toLocaleString('zh-CN')}`
                     }
                   }
                 ]
@@ -280,9 +294,7 @@ router.post('/export', auth, async (req, res) => {
                   {
                     type: 'text',
                     text: {
-                      content: post.content.length > 2000 ?
-                        post.content.substring(0, 2000) + '\n\n[内容过长，已截断...]' :
-                        post.content
+                      content: truncatedContent || '内容为空'
                     }
                   }
                 ]
