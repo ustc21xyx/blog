@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
+const { auth } = require('../middleware/auth');
 
 // Notion OAuth configuration
 const NOTION_CLIENT_ID = process.env.NOTION_CLIENT_ID;
