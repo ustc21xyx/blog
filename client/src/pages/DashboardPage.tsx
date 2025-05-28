@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { PenTool, Eye, Heart, MessageCircle, BookOpen, Crown } from 'lucide-react';
+import { PenTool, Eye, Heart, MessageCircle, BookOpen, Crown, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 import { blogApi } from '../utils/api';
 import api from '../utils/api';
 import type { BlogPost } from '../types';
+import toast from 'react-hot-toast';
 
 const DashboardPage = () => {
   const { user, token } = useAuthStore();
@@ -20,6 +21,8 @@ const DashboardPage = () => {
   const [showAdminUpgrade, setShowAdminUpgrade] = useState(false);
   const [upgradeCode, setUpgradeCode] = useState('');
   const [upgrading, setUpgrading] = useState(false);
+  const [selectedPosts, setSelectedPosts] = useState<string[]>([]);
+  const [isSelectMode, setIsSelectMode] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -48,6 +51,57 @@ const DashboardPage = () => {
       console.error('Error fetching user posts:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeletePost = async (postId: string, postTitle: string) => {
+    const confirmed = window.confirm(`确定要删除文章 "${postTitle}" 吗？此操作无法撤销。`);
+    if (!confirmed) return;
+
+    try {
+      await blogApi.deletePost(postId);
+      toast.success('文章删除成功');
+      // 重新获取文章列表
+      fetchUserPosts();
+    } catch (error: any) {
+      console.error('删除文章失败:', error);
+      toast.error(error.response?.data?.message || '删除文章失败');
+    }
+  };
+
+  const handleToggleSelectMode = () => {
+    setIsSelectMode(!isSelectMode);
+    setSelectedPosts([]);
+  };
+
+  const handleSelectPost = (postId: string) => {
+    setSelectedPosts(prev =>
+      prev.includes(postId)
+        ? prev.filter(id => id !== postId)
+        : [...prev, postId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const draftIds = posts.filter(post => !post.isPublished).map(post => post._id);
+    setSelectedPosts(selectedPosts.length === draftIds.length ? [] : draftIds);
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedPosts.length === 0) return;
+    
+    const confirmed = window.confirm(`确定要删除选中的 ${selectedPosts.length} 篇文章吗？此操作无法撤销。`);
+    if (!confirmed) return;
+
+    try {
+      await Promise.all(selectedPosts.map(postId => blogApi.deletePost(postId)));
+      toast.success(`成功删除 ${selectedPosts.length} 篇文章`);
+      setSelectedPosts([]);
+      setIsSelectMode(false);
+      fetchUserPosts();
+    } catch (error: any) {
+      console.error('批量删除失败:', error);
+      toast.error('批量删除失败');
     }
   };
 
@@ -485,12 +539,49 @@ const DashboardPage = () => {
             <h2 className="text-2xl font-heading font-bold text-gray-900 dark:text-white">
               Your Recent Posts
             </h2>
-            <Link
-              to={`/user/${user?.username}`}
-              className="text-anime-purple-600 hover:text-anime-pink-600 transition-colors duration-200 font-medium"
-            >
-              View All
-            </Link>
+            <div className="flex items-center space-x-3">
+              {posts.some(post => !post.isPublished) && (
+                <>
+                  {isSelectMode ? (
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={handleSelectAll}
+                        className="text-sm text-anime-purple-600 hover:text-anime-pink-600 transition-colors"
+                      >
+                        {selectedPosts.length === posts.filter(p => !p.isPublished).length ? '取消全选' : '全选草稿'}
+                      </button>
+                      {selectedPosts.length > 0 && (
+                        <button
+                          onClick={handleBatchDelete}
+                          className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded transition-colors"
+                        >
+                          删除选中 ({selectedPosts.length})
+                        </button>
+                      )}
+                      <button
+                        onClick={handleToggleSelectMode}
+                        className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded transition-colors"
+                      >
+                        取消
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleToggleSelectMode}
+                      className="text-sm text-anime-purple-600 hover:text-anime-pink-600 transition-colors"
+                    >
+                      批量管理
+                    </button>
+                  )}
+                </>
+              )}
+              <Link
+                to={`/user/${user?.username}`}
+                className="text-anime-purple-600 hover:text-anime-pink-600 transition-colors duration-200 font-medium"
+              >
+                View All
+              </Link>
+            </div>
           </div>
 
           {posts.length === 0 ? (
@@ -519,47 +610,57 @@ const DashboardPage = () => {
                   className="anime-card p-6 hover:shadow-lg transition-shadow duration-300"
                 >
                   <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          post.isPublished
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
-                        }`}>
-                          {post.isPublished ? 'Published' : 'Draft'}
-                        </span>
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {new Date(post.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
-                      
-                      <h3 className="text-lg font-heading font-semibold text-gray-900 dark:text-white mb-2">
-                        <Link
-                          to={post.isPublished ? `/blog/${post.slug}` : `/edit/${post._id}`}
-                          className="hover:text-anime-purple-600 dark:hover:text-anime-purple-400 transition-colors duration-200"
-                        >
-                          {post.title}
-                        </Link>
-                      </h3>
-                      
-                      {post.excerpt && (
-                        <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2 mb-3">
-                          {post.excerpt}
-                        </p>
+                    <div className="flex items-start space-x-3 flex-1">
+                      {isSelectMode && !post.isPublished && (
+                        <input
+                          type="checkbox"
+                          checked={selectedPosts.includes(post._id)}
+                          onChange={() => handleSelectPost(post._id)}
+                          className="mt-1 h-4 w-4 text-anime-purple-600 focus:ring-anime-purple-500 border-gray-300 rounded"
+                        />
                       )}
-                      
-                      <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
-                        <div className="flex items-center space-x-1">
-                          <Eye className="w-4 h-4" />
-                          <span>{post.views}</span>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            post.isPublished
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                              : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                          }`}>
+                            {post.isPublished ? 'Published' : 'Draft'}
+                          </span>
+                          <span className="text-sm text-gray-500 dark:text-gray-400">
+                            {new Date(post.createdAt).toLocaleDateString()}
+                          </span>
                         </div>
-                        <div className="flex items-center space-x-1">
-                          <Heart className="w-4 h-4" />
-                          <span>{post.likeCount}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <MessageCircle className="w-4 h-4" />
-                          <span>{post.commentCount}</span>
+                        
+                        <h3 className="text-lg font-heading font-semibold text-gray-900 dark:text-white mb-2">
+                          <Link
+                            to={post.isPublished ? `/blog/${post.slug}` : `/edit/${post._id}`}
+                            className="hover:text-anime-purple-600 dark:hover:text-anime-purple-400 transition-colors duration-200"
+                          >
+                            {post.title}
+                          </Link>
+                        </h3>
+                        
+                        {post.excerpt && (
+                          <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2 mb-3">
+                            {post.excerpt}
+                          </p>
+                        )}
+                        
+                        <div className="flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                          <div className="flex items-center space-x-1">
+                            <Eye className="w-4 h-4" />
+                            <span>{post.views}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <Heart className="w-4 h-4" />
+                            <span>{post.likeCount}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <MessageCircle className="w-4 h-4" />
+                            <span>{post.commentCount}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -568,9 +669,17 @@ const DashboardPage = () => {
                       <Link
                         to={`/edit/${post._id}`}
                         className="p-2 rounded-lg bg-gray-100 dark:bg-dark-bg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
+                        title="编辑文章"
                       >
                         <PenTool className="w-4 h-4 text-gray-600 dark:text-gray-400" />
                       </Link>
+                      <button
+                        onClick={() => handleDeletePost(post._id, post.title)}
+                        className="p-2 rounded-lg bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors duration-200"
+                        title="删除文章"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
+                      </button>
                     </div>
                   </div>
                 </motion.div>

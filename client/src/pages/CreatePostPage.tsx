@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { Save, Eye } from 'lucide-react';
+import { Save, Eye, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { blogApi } from '../utils/api';
@@ -124,6 +124,22 @@ const CreatePostPage = () => {
       toast.error(error.response?.data?.message || 'Failed to save post');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeletePost = async () => {
+    if (!id) return;
+    
+    const confirmed = window.confirm('确定要删除这篇文章吗？此操作无法撤销。');
+    if (!confirmed) return;
+
+    try {
+      await blogApi.deletePost(id);
+      toast.success('文章删除成功');
+      navigate('/dashboard');
+    } catch (error: any) {
+      console.error('删除文章失败:', error);
+      toast.error(error.response?.data?.message || '删除文章失败');
     }
   };
 
@@ -349,6 +365,16 @@ const CreatePostPage = () => {
               </div>
 
               <div className="flex items-center space-x-4">
+                {id && (
+                  <button
+                    type="button"
+                    onClick={handleDeletePost}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors duration-200 flex items-center space-x-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>删除</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => navigate('/blog')}
