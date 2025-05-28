@@ -267,19 +267,82 @@ router.post('/export', auth, async (req, res) => {
 
     const notion = new Client({ auth: integration.accessToken });
 
-    // First, verify the workspace access
+    // First, try to find or create a database for blog posts
+    let targetDatabaseId = null;
+    
     try {
-      const workspaces = await notion.search({
+      // Search for existing databases
+      const searchResponse = await notion.search({
         filter: {
-          value: 'page',
+          value: 'database',
           property: 'object'
         },
-        page_size: 1
+        query: 'Blog Posts'
       });
+
+      if (searchResponse.results.length > 0) {
+        targetDatabaseId = searchResponse.results[0].id;
+        console.log('Found existing database:', targetDatabaseId);
+      } else {
+        // If no database found, search for any page to use as parent
+        const pageSearch = await notion.search({
+          filter: {
+            value: 'page',
+            property: 'object'
+          },
+          page_size: 1
+        });
+
+        if (pageSearch.results.length > 0) {
+          const parentPageId = pageSearch.results[0].id;
+          console.log('Creating new database under page:', parentPageId);
+          
+          // Create a new database for blog posts
+          const newDatabase = await notion.databases.create({
+            parent: {
+              type: 'page_id',
+              page_id: parentPageId
+            },
+            title: [
+              {
+                type: 'text',
+                text: {
+                  content: 'Blog Posts'
+                }
+              }
+            ],
+            properties: {
+              'Name': {
+                title: {}
+              },
+              'Author': {
+                rich_text: {}
+              },
+              'Published Date': {
+                date: {}
+              },
+              'Category': {
+                select: {
+                  options: [
+                    { name: 'Technology', color: 'blue' },
+                    { name: 'Lifestyle', color: 'green' },
+                    { name: 'Other', color: 'gray' }
+                  ]
+                }
+              }
+            }
+          });
+          
+          targetDatabaseId = newDatabase.id;
+          console.log('Created new database:', targetDatabaseId);
+        } else {
+          throw new Error('No accessible pages found in workspace');
+        }
+      }
     } catch (error) {
-      console.error('Workspace access error:', error);
+      console.error('Database setup error:', error);
       return res.status(400).json({ 
-        message: '无法访问Notion工作区。请检查集成权限。',
+        message: '无法设置Notion数据库。请确保集成有足够的权限。',
         error: error.message 
       });
     }
@@ -305,9 +368,9 @@ router.post('/export', auth, async (req, res) => {
         const cleanTitle = cleanContentForNotion(post.title || '无标题');
         const cleanContent = cleanContentForNotion(post.content || '');
         
-        // Create page properties with correct format
+        // Create page properties with correct format for database
         const pageProperties = {
-          title: {
+          'Name': {
             title: [
               {
                 type: 'text',
@@ -316,54 +379,61 @@ router.post('/export', auth, async (req, res) => {
                 }
               }
             ]
+          },
+          'Author': {
+            rich_text: [
+              {
+                type: 'text',
+                text: {
+                  content: post.author?.displayName || post.author?.username || '未知'
+                }
+              }
+            ]
+          },
+          'Published Date': {
+            date: {
+              start: post.createdAt ? post.createdAt.toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+            }
+          },
+          'Category': {
+            select: {
+              name: 'Other'
+            }
           }
         };
 
         // Create children blocks for content
         const children = [];
         
-        // Add metadata block
-        children.push({
-          object: 'block',
-          type: 'paragraph',
-          paragraph: {
-            rich_text: [
-              {
-                type: 'text',
-                text: {
-                  content: `作者: ${post.author?.displayName || post.author?.username || '未知'}`
-                }
-              }
-            ]
-          }
-        });
-
-        children.push({
-          object: 'block',
-          type: 'paragraph',
-          paragraph: {
-            rich_text: [
-              {
-                type: 'text',
-                text: {
-                  content: `发布时间: ${post.createdAt ? new Date(post.createdAt).toLocaleDateString('zh-CN') : '未知'}`
-                }
-              }
-            ]
-          }
-        });
-
         // Add content blocks
         if (cleanContent) {
           const contentBlocks = createContentBlocks(cleanContent);
           children.push(...contentBlocks);
         }
 
-        // Create the page with workspace as parent
+        // If no content, add a placeholder
+        if (children.length === 0) {
+          children.push({
+            object: 'block',
+            type: 'paragraph',
+            paragraph: {
+              rich_text: [
+                {
+                  type: 'text',
+                  text: {
+                    content: '此文章暂无内容。'
+                  }
+                }
+              ]
+            }
+          });
+        }
+
+        // Create the page in the database
         const pageData = {
           parent: {
-            type: 'workspace',
-            workspace: true
+            type: 'database_id',
+            database_id: targetDatabaseId
           },
           properties: pageProperties,
           children: children.slice(0, 100) // Notion API limit for children in create request
@@ -414,9 +484,10 @@ router.post('/export', auth, async (req, res) => {
     }
 
     res.json({
-      message: `成功导出 ${successCount} 篇文章到Notion`,
+      message: `成功导出 ${successCount} 篇文章到Notion数据库`,
       successCount,
       totalAttempted: posts.length,
+      databaseId: targetDatabaseId,
       errors: errors.length > 0 ? errors : undefined
     });
 
