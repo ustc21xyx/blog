@@ -26,60 +26,60 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ content, contentType,
         // 如果 contentType 是 'html'，它将被下面的 'case: html' 捕获。
         // 所有其他类型 (markdown, text, latex, mixed, 或任何未明确列出的) 将在此处作为 markdown 处理。
         return (
-          <div className={`blog-content ${className}`}>
+          <div className={`prose prose-lg dark:prose-invert max-w-none ${className}`}>
             <ReactMarkdown
               remarkPlugins={[remarkMath]}
               rehypePlugins={[rehypeKatex]}
               components={{
-                // 自定义标题样式 - 简洁优雅
+                // 标题使用您已有的blog-content样式
                 h1: ({ children }) => (
-                  <h1 className="text-3xl font-bold mb-6 anime-gradient-text">
+                  <h1 className="text-3xl font-bold mb-6 anime-gradient-text font-heading">
                     {children}
                   </h1>
                 ),
                 h2: ({ children }) => (
-                  <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-200">
+                  <h2 className="text-2xl font-semibold mb-4 text-gray-800 dark:text-gray-200 font-heading">
                     {children}
                   </h2>
                 ),
                 h3: ({ children }) => (
-                  <h3 className="text-xl font-medium mb-3 text-gray-700 dark:text-gray-300">
+                  <h3 className="text-xl font-medium mb-3 text-gray-700 dark:text-gray-300 font-heading">
                     {children}
                   </h3>
                 ),
                 
-                // 自定义段落样式
+                // 段落保持自然流畅
                 p: ({ children }) => (
-                  <p className="mb-4 leading-relaxed text-gray-600 dark:text-gray-300">
+                  <p className="mb-4 leading-relaxed text-gray-600 dark:text-gray-300 font-anime">
                     {children}
                   </p>
                 ),
                 
-                // 自定义引用样式 - 简洁风格
+                // 引用框融入主题但不过度装饰
                 blockquote: ({ children }) => (
-                  <blockquote className="kawaii-card border-l-4 border-anime-pink-500 pl-6 pr-4 py-4 mb-4">
+                  <blockquote className="border-l-4 border-anime-purple-500 pl-6 py-2 my-6 bg-gray-50/50 dark:bg-dark-card/50 rounded-r-lg italic text-gray-600 dark:text-gray-400">
                     {children}
                   </blockquote>
                 ),
                 
-                // 自定义链接样式
+                // 链接使用主题色但保持简洁
                 a: ({ children, href }) => (
                   <a
                     href={href}
-                    className="text-anime-purple-600 hover:text-anime-pink-600 transition-colors duration-200 font-medium border-b border-dotted border-anime-purple-300 hover:border-anime-pink-300"
+                    className="text-anime-purple-600 hover:text-anime-pink-600 dark:text-anime-purple-400 dark:hover:text-anime-pink-400 transition-colors duration-200 underline decoration-dotted underline-offset-2 hover:decoration-solid"
                   >
                     {children}
                   </a>
                 ),
                 
-                // 自定义代码块样式 - 简洁风格
+                // 代码样式融入主题
                 code: ({ node, inline, className: propClassName, children, ...props }: { node?: any; inline?: boolean; className?: string; children?: React.ReactNode }) => {
                   return inline ? (
-                    <code className="bg-anime-purple-100 dark:bg-anime-purple-900/30 text-anime-purple-700 dark:text-anime-purple-300 px-2 py-1 rounded-md text-sm font-mono border border-anime-purple-200 dark:border-anime-purple-700" {...props}>
+                    <code className="bg-anime-purple-100 dark:bg-anime-purple-900/20 text-anime-purple-700 dark:text-anime-purple-300 px-1.5 py-0.5 rounded text-sm font-mono" {...props}>
                       {children}
                     </code>
                   ) : (
-                    <pre className="bg-gradient-to-br from-gray-900 to-gray-800 dark:from-black dark:to-gray-900 p-4 rounded-xl overflow-x-auto border-2 border-anime-purple-200 dark:border-anime-purple-700 mb-4">
+                    <pre className="bg-gray-900 dark:bg-black p-4 rounded-lg overflow-x-auto my-4 border border-gray-200 dark:border-dark-border">
                       <code className="text-gray-100 font-mono text-sm" {...props}>
                         {children}
                       </code>
@@ -87,27 +87,27 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ content, contentType,
                   );
                 },
                 
-                // 自定义列表样式
+                // 列表保持标准但使用主题色
                 ul: ({ children }) => (
-                  <ul className="mb-4 space-y-2 list-disc list-inside">
+                  <ul className="mb-4 space-y-1 list-disc list-inside marker:text-anime-purple-400">
                     {children}
                   </ul>
                 ),
                 ol: ({ children }) => (
-                  <ol className="mb-4 space-y-2 list-decimal list-inside">
+                  <ol className="mb-4 space-y-1 list-decimal list-inside marker:text-anime-purple-400">
                     {children}
                   </ol>
                 ),
                 li: ({ children }) => (
-                  <li className="text-gray-600 dark:text-gray-300">
+                  <li className="text-gray-600 dark:text-gray-300 pl-2">
                     {children}
                   </li>
                 ),
                 
-                // 自定义表格样式 - 简洁风格
+                // 表格使用现有的anime-card样式
                 table: ({ children }) => (
-                  <div className="overflow-x-auto mb-6">
-                    <div className="kawaii-card p-4">
+                  <div className="overflow-x-auto my-6">
+                    <div className="anime-card p-0 overflow-hidden">
                       <table className="min-w-full">
                         {children}
                       </table>
@@ -115,32 +115,32 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ content, contentType,
                   </div>
                 ),
                 th: ({ children }) => (
-                  <th className="px-4 py-3 bg-gradient-to-r from-anime-purple-100 to-anime-pink-100 dark:from-anime-purple-900/30 dark:to-anime-pink-900/30 text-left text-sm font-medium text-anime-purple-800 dark:text-anime-purple-200 rounded-t-lg border-b-2 border-anime-purple-200 dark:border-anime-purple-700">
+                  <th className="px-4 py-3 bg-gray-50 dark:bg-dark-bg text-left text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-dark-border">
                     {children}
                   </th>
                 ),
                 td: ({ children }) => (
-                  <td className="px-4 py-3 text-sm text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700">
+                  <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 border-b border-gray-100 dark:border-dark-border/50">
                     {children}
                   </td>
                 ),
                 
-                // 自定义强调样式
+                // 强调保持简洁
                 strong: ({ children }) => (
-                  <strong className="font-bold text-anime-purple-700 dark:text-anime-purple-300">
+                  <strong className="font-semibold text-gray-900 dark:text-white">
                     {children}
                   </strong>
                 ),
                 em: ({ children }) => (
-                  <em className="italic text-anime-pink-600 dark:text-anime-pink-400">
+                  <em className="italic text-gray-700 dark:text-gray-300">
                     {children}
                   </em>
                 ),
                 
-                // 自定义分割线
+                // 分割线简洁优雅
                 hr: () => (
-                  <div className="my-8 flex items-center justify-center">
-                    <div className="w-32 h-px bg-gradient-to-r from-transparent via-anime-purple-300 to-transparent"></div>
+                  <div className="my-8">
+                    <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-300 dark:via-gray-600 to-transparent"></div>
                   </div>
                 ),
               }}
