@@ -185,16 +185,14 @@ router.post('/export', auth, async (req, res) => {
             workspace: true
           },
           properties: {
-            title: {
-              title: [
-                {
-                  type: 'text',
-                  text: {
-                    content: `📝 ${cleanTitle} - 来自博客`
-                  }
+            title: [
+              {
+                type: 'text',
+                text: {
+                  content: `📝 ${cleanTitle} - 来自博客`
                 }
-              ]
-            }
+              }
+            ]
           },
           children: [
             {
