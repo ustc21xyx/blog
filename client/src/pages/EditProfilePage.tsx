@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { Save, ArrowLeft } from 'lucide-react';
+import { Save, ArrowLeft, Database } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '../store/authStore';
@@ -219,6 +219,42 @@ const EditProfilePage = () => {
                     placeholder="Attack on Titan, One Piece, Naruto"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Notion Integration */}
+            <div className="anime-card p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                    <Database className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-heading font-semibold text-gray-900 dark:text-white">
+                      Notion 集成
+                    </h2>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      连接 Notion 工作区，轻松同步博客内容
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate('/notion-integration')}
+                  className="anime-button-primary text-sm px-4 py-2"
+                >
+                  管理集成
+                </button>
+              </div>
+              
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg p-4 border border-purple-200 dark:border-purple-800">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  💡 连接你的 Notion 账号后，可以：
+                </p>
+                <ul className="mt-2 text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                  <li>• 将博客文章快速导出到 Notion 数据库</li>
+                  <li>• 从 Notion 页面导入内容作为博客发布</li>
+                  <li>• 手动控制同步时机，保护你的数据安全</li>
+                </ul>
               </div>
             </div>
 

@@ -129,10 +129,27 @@ const Footer = () => {
 
         {/* Bottom Bar */}
         <div className="border-t border-gray-200 dark:border-dark-border mt-8 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 md:mb-0">
-              © 2024 AnimeBlog. All rights reserved.
-            </p>
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+            <div className="flex flex-col md:flex-row items-center space-y-2 md:space-y-0 md:space-x-4">
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
+                © 2024 二次元博客. All rights reserved.
+              </p>
+              <div className="flex items-center space-x-4 text-sm">
+                <a
+                  href="/privacy-policy"
+                  className="text-gray-600 dark:text-gray-400 hover:text-anime-purple-600 dark:hover:text-anime-purple-400 transition-colors duration-200"
+                >
+                  隐私政策
+                </a>
+                <span className="text-gray-300 dark:text-gray-600">|</span>
+                <a
+                  href="/terms-of-use"
+                  className="text-gray-600 dark:text-gray-400 hover:text-anime-purple-600 dark:hover:text-anime-purple-400 transition-colors duration-200"
+                >
+                  使用条款
+                </a>
+              </div>
+            </div>
             <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
               <span>Made with</span>
               <Heart className="w-4 h-4 text-anime-pink-500" />

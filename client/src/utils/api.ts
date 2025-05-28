@@ -95,4 +95,17 @@ export const userApi = {
     api.get('/user', { params }),
 };
 
+export const notionApi = {
+  getStatus: () => api.get('/notion/status'),
+  getAuthUrl: () => api.get('/notion/auth-url'),
+  handleCallback: (code: string) => api.post('/notion/callback', { code }),
+  disconnect: () => api.delete('/notion/disconnect'),
+  exportToNotion: (postId?: string) => 
+    api.post('/notion/export', postId ? { postId } : {}),
+  importFromNotion: () => api.post('/notion/import'),
+  getSyncHistory: () => api.get('/notion/sync-history'),
+  getDatabases: () => api.get('/notion/databases'),
+  testConnection: () => api.get('/notion/test'),
+};
+
 export default api;

@@ -21,6 +21,10 @@ import ModelsPage from './pages/ModelsPage';
 import QuestionsPage from './pages/QuestionsPage';
 import AnswerQuestionPage from './pages/AnswerQuestionPage';
 import LeaderboardPage from './pages/LeaderboardPage';
+import NotionIntegrationPage from './pages/NotionIntegrationPage';
+import NotionCallbackPage from './pages/NotionCallbackPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfUsePage from './pages/TermsOfUsePage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -91,6 +95,26 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/notion-integration"
+              element={
+                <ProtectedRoute>
+                  <NotionIntegrationPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notion-callback"
+              element={
+                <ProtectedRoute>
+                  <NotionCallbackPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Legal Pages */}
+            <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms-of-use" element={<TermsOfUsePage />} />
             
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
