@@ -2,31 +2,65 @@ const express = require('express');
 const { body, validationResult, param } = require('express-validator');
 const BlogPost = require('../models/BlogPost');
 const { auth, optionalAuth } = require('../middleware/auth');
+const User = require('../models/User');
+const rateLimit = require('express-rate-limit');
+const { cacheMiddleware, clearCache } = require('../middleware/cache');
 
 const router = express.Router();
 
-// Get all published blog posts (with pagination)
-router.get('/', optionalAuth, async (req, res) => {
-  try {
-    const mongoose = require('mongoose');
-    console.log('[BLOG API] Database state:', mongoose.connection.readyState);
-    
-    // If database is not connected, try to return empty data instead of error
-    if (mongoose.connection.readyState !== 1) {
-      console.error('[BLOG API] Database not connected, returning empty data');
-      return res.json({
-        posts: [],
-        pagination: { page: 1, limit: 10, total: 0, pages: 0 },
-        message: 'Database connection unavailable - showing empty results'
-      });
-    }
+// 添加内存缓存
+const cache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5分钟缓存
 
+// 缓存辅助函数
+const getCacheKey = (key, params = {}) => {
+  return `${key}_${JSON.stringify(params)}`;
+};
+
+const getFromCache = (key) => {
+  const cached = cache.get(key);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+  cache.delete(key);
+  return null;
+};
+
+const setCache = (key, data) => {
+  cache.set(key, {
+    data,
+    timestamp: Date.now()
+  });
+  
+  // 清理过期缓存
+  if (cache.size > 100) {
+    const now = Date.now();
+    for (const [k, v] of cache.entries()) {
+      if (now - v.timestamp > CACHE_TTL) {
+        cache.delete(k);
+      }
+    }
+  }
+};
+
+// Get all published blog posts (with pagination)
+router.get('/', optionalAuth, cacheMiddleware(300), async (req, res) => {
+  try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     const category = req.query.category;
     const tag = req.query.tag;
     const search = req.query.search;
+
+    // 创建缓存键
+    const cacheKey = getCacheKey('posts', { page, limit, category, tag, search });
+    
+    // 检查缓存
+    const cachedResult = getFromCache(cacheKey);
+    if (cachedResult) {
+      return res.json(cachedResult);
+    }
 
     let filter = { isPublished: true };
     
@@ -40,16 +74,18 @@ router.get('/', optionalAuth, async (req, res) => {
       ];
     }
 
+    // 优化查询 - 只选择必要字段，使用lean()提高性能
     const posts = await BlogPost.find(filter)
       .populate('author', 'username displayName avatar')
       .sort({ publishedAt: -1 })
       .skip(skip)
       .limit(limit)
-      .select('-content');
+      .select('-content') // 排除content字段减少数据传输
+      .lean(); // 返回普通JS对象，提高性能
 
     const total = await BlogPost.countDocuments(filter);
 
-    res.json({
+    const result = {
       posts,
       pagination: {
         page,
@@ -57,7 +93,12 @@ router.get('/', optionalAuth, async (req, res) => {
         total,
         pages: Math.ceil(total / limit)
       }
-    });
+    };
+
+    // 缓存结果
+    setCache(cacheKey, result);
+
+    res.json(result);
   } catch (error) {
     console.error('Get posts error:', error);
     res.status(500).json({ 
@@ -153,6 +194,10 @@ router.post('/', auth, [
     await post.save();
     await post.populate('author', 'username displayName avatar');
 
+    // 清除相关缓存
+    clearCache('/api/blog');
+    clearCache(`/api/blog/user/${req.user.username}`);
+
     res.status(201).json({
       message: 'Post created successfully',
       post
@@ -227,6 +272,11 @@ router.put('/:id', auth, [
       updateData,
       { new: true, runValidators: true }
     ).populate('author', 'username displayName avatar');
+
+    // 清除相关缓存
+    clearCache('/api/blog');
+    clearCache(`/api/blog/user/${updatedPost.author.username}`);
+    clearCache(`/api/blog/${updatedPost.slug}`);
 
     res.json({
       message: 'Post updated successfully',
@@ -332,43 +382,69 @@ router.post('/:id/comments', auth, [
   }
 });
 
-// Get user's posts
-router.get('/user/:username', optionalAuth, async (req, res) => {
+// Get user's blog posts
+router.get('/user/:username', optionalAuth, cacheMiddleware(180), async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const user = await require('../models/User').findOne({ username: req.params.username });
+    // 创建缓存键
+    const cacheKey = getCacheKey('user_posts', { username: req.params.username, page, limit });
+    
+    // 检查缓存
+    const cachedResult = getFromCache(cacheKey);
+    if (cachedResult) {
+      return res.json(cachedResult);
+    }
+
+    const user = await User.findOne({ username: req.params.username }).lean();
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    let filter = { author: user._id, isPublished: true };
-    
-    // If viewing own posts, show drafts too
+    // 构建查询条件
+    let filter = { 
+      author: user._id,
+      isPublished: true 
+    };
+
+    // 如果是用户自己，可以看到未发布的文章
     if (req.user && req.user._id.toString() === user._id.toString()) {
       delete filter.isPublished;
     }
 
+    // 优化查询
     const posts = await BlogPost.find(filter)
       .populate('author', 'username displayName avatar')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .select('-content');
+      .select('-content')
+      .lean();
 
     const total = await BlogPost.countDocuments(filter);
 
-    res.json({
+    const result = {
       posts,
+      user: {
+        username: user.username,
+        displayName: user.displayName,
+        avatar: user.avatar,
+        bio: user.bio
+      },
       pagination: {
         page,
         limit,
         total,
         pages: Math.ceil(total / limit)
       }
-    });
+    };
+
+    // 缓存结果（较短时间，因为用户可能会更新）
+    setCache(cacheKey, result);
+
+    res.json(result);
   } catch (error) {
     console.error('Get user posts error:', error);
     res.status(500).json({ message: 'Server error' });
