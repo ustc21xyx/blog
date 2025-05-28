@@ -185,14 +185,17 @@ router.post('/export', auth, async (req, res) => {
             workspace: true
           },
           properties: {
-            title: [
-              {
-                type: 'text',
-                text: {
-                  content: `📝 ${cleanTitle} - 来自博客`
+            "title": { // Key must be "title" for the main page title property
+              "type": "title", // Explicitly state the type
+              "title": [       // The value for a "title" type property is an array of rich text objects
+                {
+                  "type": "text",
+                  "text": {
+                    "content": `📝 ${cleanTitle} - 来自博客`
+                  }
                 }
-              }
-            ]
+              ]
+            }
           },
           children: [
             {
