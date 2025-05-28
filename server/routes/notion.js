@@ -271,7 +271,7 @@ router.post('/export', auth, async (req, res) => {
     let targetDatabaseId = null;
     
     try {
-      // Search for existing databases
+      // Search for existing databases with exact name match
       const searchResponse = await notion.search({
         filter: {
           value: 'database',
@@ -280,71 +280,131 @@ router.post('/export', auth, async (req, res) => {
         query: 'Blog Posts'
       });
 
-      if (searchResponse.results.length > 0) {
-        targetDatabaseId = searchResponse.results[0].id;
-        console.log('Found existing database:', targetDatabaseId);
-      } else {
-        // If no database found, search for any page to use as parent
-        const pageSearch = await notion.search({
-          filter: {
-            value: 'page',
-            property: 'object'
-          },
-          page_size: 1
-        });
+      // Look for exact match first
+      const exactMatch = searchResponse.results.find(db => {
+        const title = db.title?.[0]?.plain_text || '';
+        return title === 'Blog Posts';
+      });
 
-        if (pageSearch.results.length > 0) {
-          const parentPageId = pageSearch.results[0].id;
-          console.log('Creating new database under page:', parentPageId);
-          
-          // Create a new database for blog posts
-          const newDatabase = await notion.databases.create({
-            parent: {
-              type: 'page_id',
-              page_id: parentPageId
-            },
-            title: [
-              {
-                type: 'text',
-                text: {
-                  content: 'Blog Posts'
-                }
-              }
-            ],
-            properties: {
-              'Name': {
-                title: {}
-              },
-              'Author': {
-                rich_text: {}
-              },
-              'Published Date': {
-                date: {}
-              },
-              'Category': {
-                select: {
-                  options: [
-                    { name: 'Technology', color: 'blue' },
-                    { name: 'Lifestyle', color: 'green' },
-                    { name: 'Other', color: 'gray' }
-                  ]
-                }
+      if (exactMatch) {
+        targetDatabaseId = exactMatch.id;
+        console.log('Found existing Blog Posts database:', targetDatabaseId);
+      } else if (searchResponse.results.length > 0) {
+        // Use the first database that contains "Blog Posts" in the name
+        targetDatabaseId = searchResponse.results[0].id;
+        console.log('Found similar database:', targetDatabaseId);
+      } else {
+        // Create a new database in workspace root
+        console.log('Creating new Blog Posts database in workspace root');
+        
+        // Create a new database for blog posts directly in workspace
+        const newDatabase = await notion.databases.create({
+          parent: {
+            type: 'workspace',
+            workspace: true
+          },
+          title: [
+            {
+              type: 'text',
+              text: {
+                content: 'Blog Posts'
               }
             }
-          });
-          
-          targetDatabaseId = newDatabase.id;
-          console.log('Created new database:', targetDatabaseId);
-        } else {
-          throw new Error('No accessible pages found in workspace');
-        }
+          ],
+          properties: {
+            'Name': {
+              title: {}
+            },
+            'Author': {
+              rich_text: {}
+            },
+            'Published Date': {
+              date: {}
+            },
+            'Category': {
+              select: {
+                options: [
+                  { name: 'Technology', color: 'blue' },
+                  { name: 'Lifestyle', color: 'green' },
+                  { name: 'Other', color: 'gray' }
+                ]
+              }
+            }
+          }
+        });
+        
+        targetDatabaseId = newDatabase.id;
+        console.log('Created new database in workspace root:', targetDatabaseId);
       }
     } catch (error) {
       console.error('Database setup error:', error);
-      return res.status(400).json({ 
-        message: '无法设置Notion数据库。请确保集成有足够的权限。',
-        error: error.message 
-      });
+      
+      // Fallback: try to create under a page if workspace creation fails
+      if (error.code === 'validation_error' || error.message.includes('workspace')) {
+        console.log('Workspace creation failed, trying to create under a page...');
+        try {
+          const pageSearch = await notion.search({
+            filter: {
+              value: 'page',
+              property: 'object'
+            },
+            page_size: 1
+          });
+
+          if (pageSearch.results.length > 0) {
+            const parentPageId = pageSearch.results[0].id;
+            console.log('Creating new database under page:', parentPageId);
+            
+            const newDatabase = await notion.databases.create({
+              parent: {
+                type: 'page_id',
+                page_id: parentPageId
+              },
+              title: [
+                {
+                  type: 'text',
+                  text: {
+                    content: 'Blog Posts'
+                  }
+                }
+              ],
+              properties: {
+                'Name': {
+                  title: {}
+                },
+                'Author': {
+                  rich_text: {}
+                },
+                'Published Date': {
+                  date: {}
+                },
+                'Category': {
+                  select: {
+                    options: [
+                      { name: 'Technology', color: 'blue' },
+                      { name: 'Lifestyle', color: 'green' },
+                      { name: 'Other', color: 'gray' }
+                    ]
+                  }
+                }
+              }
+            });
+            
+            targetDatabaseId = newDatabase.id;
+            console.log('Created new database under page:', targetDatabaseId);
+          } else {
+            throw new Error('No accessible pages found in workspace');
+          }
+        } catch (fallbackError) {
+          console.error('Fallback database creation failed:', fallbackError);
+          throw fallbackError;
+        }
+      } else {
+        return res.status(400).json({ 
+          message: '无法设置Notion数据库。请确保集成有足够的权限。',
+          error: error.message 
+        });
+      }
     }
 
     // Get blog posts to export
