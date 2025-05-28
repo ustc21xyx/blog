@@ -55,11 +55,10 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ content, contentType,
                   </p>
                 ),
                 
-                // 自定义引用样式 - kawaii风格
+                // 自定义引用样式 - 简洁风格
                 blockquote: ({ children }) => (
-                  <blockquote className="kawaii-card border-l-4 border-anime-pink-500 pl-6 pr-4 py-4 mb-4 relative">
-                    <div className="absolute top-2 left-2 text-anime-pink-500 text-lg">💕</div>
-                    <div className="ml-4">{children}</div>
+                  <blockquote className="kawaii-card border-l-4 border-anime-pink-500 pl-6 pr-4 py-4 mb-4">
+                    {children}
                   </blockquote>
                 ),
                 
@@ -73,50 +72,42 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ content, contentType,
                   </a>
                 ),
                 
-                // 自定义代码块样式 - kawaii风格
+                // 自定义代码块样式 - 简洁风格
                 code: ({ node, inline, className: propClassName, children, ...props }: { node?: any; inline?: boolean; className?: string; children?: React.ReactNode }) => {
                   return inline ? (
                     <code className="bg-anime-purple-100 dark:bg-anime-purple-900/30 text-anime-purple-700 dark:text-anime-purple-300 px-2 py-1 rounded-md text-sm font-mono border border-anime-purple-200 dark:border-anime-purple-700" {...props}>
                       {children}
                     </code>
                   ) : (
-                    <div className="relative mb-4">
-                      <div className="absolute top-2 left-3 text-anime-pink-400 text-sm">🌸 代码</div>
-                      <pre className="bg-gradient-to-br from-gray-900 to-gray-800 dark:from-black dark:to-gray-900 p-4 pt-8 rounded-xl overflow-x-auto border-2 border-anime-purple-200 dark:border-anime-purple-700">
-                        <code className="text-gray-100 font-mono text-sm" {...props}>
-                          {children}
-                        </code>
-                      </pre>
-                    </div>
+                    <pre className="bg-gradient-to-br from-gray-900 to-gray-800 dark:from-black dark:to-gray-900 p-4 rounded-xl overflow-x-auto border-2 border-anime-purple-200 dark:border-anime-purple-700 mb-4">
+                      <code className="text-gray-100 font-mono text-sm" {...props}>
+                        {children}
+                      </code>
+                    </pre>
                   );
                 },
                 
                 // 自定义列表样式
                 ul: ({ children }) => (
-                  <ul className="mb-4 space-y-2">
+                  <ul className="mb-4 space-y-2 list-disc list-inside">
                     {children}
                   </ul>
                 ),
                 ol: ({ children }) => (
-                  <ol className="mb-4 space-y-2">
+                  <ol className="mb-4 space-y-2 list-decimal list-inside">
                     {children}
                   </ol>
                 ),
                 li: ({ children }) => (
-                  <li className="flex items-start">
-                    <span className="mr-2 text-anime-pink-500 mt-1">🌺</span>
-                    <span className="text-gray-600 dark:text-gray-300">{children}</span>
+                  <li className="text-gray-600 dark:text-gray-300">
+                    {children}
                   </li>
                 ),
                 
-                // 自定义表格样式 - kawaii风格
+                // 自定义表格样式 - 简洁风格
                 table: ({ children }) => (
                   <div className="overflow-x-auto mb-6">
                     <div className="kawaii-card p-4">
-                      <div className="flex items-center mb-3">
-                        <span className="text-anime-pink-500 mr-2">📊</span>
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">数据表格</span>
-                      </div>
                       <table className="min-w-full">
                         {children}
                       </table>
@@ -149,13 +140,7 @@ const ContentRenderer: React.FC<ContentRendererProps> = ({ content, contentType,
                 // 自定义分割线
                 hr: () => (
                   <div className="my-8 flex items-center justify-center">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-anime-pink-400">🌸</span>
-                      <div className="w-20 h-px bg-gradient-to-r from-transparent via-anime-purple-300 to-transparent"></div>
-                      <span className="text-anime-purple-400">✨</span>
-                      <div className="w-20 h-px bg-gradient-to-r from-transparent via-anime-pink-300 to-transparent"></div>
-                      <span className="text-anime-pink-400">🌸</span>
-                    </div>
+                    <div className="w-32 h-px bg-gradient-to-r from-transparent via-anime-purple-300 to-transparent"></div>
                   </div>
                 ),
               }}
