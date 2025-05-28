@@ -338,7 +338,7 @@ router.post('/import', auth, async (req, res) => {
           content: content || 'Content imported from Notion',
           excerpt: content.substring(0, 200) + (content.length > 200 ? '...' : ''),
           author: userId,
-          category: 'imported',
+          category: 'other', // Use valid category
           tags: ['notion', 'imported'],
           isPublished: false // Import as draft first
         });
