@@ -261,7 +261,7 @@ export interface BookRecommendation {
   likes: string[];
   comments: BookComment[];
   readingStatus: 'want-to-read' | 'reading' | 'finished' | 'abandoned';
-  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  difficulty: 'light' | 'serious' | 'professional';
   recommendation: 'highly-recommend' | 'recommend' | 'neutral' | 'not-recommend';
   isPublished: boolean;
   publishedAt?: string;
@@ -295,7 +295,7 @@ export interface CreateBookRecommendationForm {
   review: string;
   tags?: string[];
   readingStatus?: 'want-to-read' | 'reading' | 'finished' | 'abandoned';
-  difficulty?: 'beginner' | 'intermediate' | 'advanced';
+  difficulty?: 'light' | 'serious' | 'professional';
   recommendation: 'highly-recommend' | 'recommend' | 'neutral' | 'not-recommend';
   isPublished?: boolean;
 }

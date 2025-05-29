@@ -11,7 +11,7 @@ const BookRecommendationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [selectedDifficulty, setSelectedDifficulty] = useState('');
+  const [selectedReadingType, setSelectedReadingType] = useState('');
   const [selectedRecommendation, setSelectedRecommendation] = useState('');
   const [sortBy, setSortBy] = useState('publishedAt');
   const [pagination, setPagination] = useState({
@@ -24,39 +24,39 @@ const BookRecommendationsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const categories = [
-    { value: '', label: '全部分类 📚' },
-    { value: '小说', label: '小说 📖' },
-    { value: '技术', label: '技术 💻' },
-    { value: '历史', label: '历史 🏛️' },
-    { value: '科幻', label: '科幻 🚀' },
-    { value: '传记', label: '传记 👤' },
-    { value: '心理学', label: '心理学 🧠' },
-    { value: '哲学', label: '哲学 🤔' },
-    { value: '艺术', label: '艺术 🎨' },
-    { value: '经济', label: '经济 💰' },
-    { value: '其他', label: '其他 ✨' },
+    { value: '', label: '全部分类' },
+    { value: '小说', label: '小说' },
+    { value: '技术', label: '技术' },
+    { value: '历史', label: '历史' },
+    { value: '科幻', label: '科幻' },
+    { value: '传记', label: '传记' },
+    { value: '心理学', label: '心理学' },
+    { value: '哲学', label: '哲学' },
+    { value: '艺术', label: '艺术' },
+    { value: '经济', label: '经济' },
+    { value: '其他', label: '其他' },
   ];
 
-  const difficulties = [
-    { value: '', label: '全部难度 🎯' },
-    { value: 'beginner', label: '入门 🌱' },
-    { value: 'intermediate', label: '中级 🌿' },
-    { value: 'advanced', label: '高级 🌳' },
+  const readingTypes = [
+    { value: '', label: '全部类型' },
+    { value: 'light', label: '轻松阅读' },
+    { value: 'serious', label: '深度阅读' },
+    { value: 'professional', label: '专业学习' },
   ];
 
   const recommendations = [
-    { value: '', label: '全部推荐度 ⭐' },
-    { value: 'highly-recommend', label: '强烈推荐 💖' },
-    { value: 'recommend', label: '推荐 👍' },
-    { value: 'neutral', label: '一般 😐' },
-    { value: 'not-recommend', label: '不推荐 👎' },
+    { value: '', label: '全部推荐度' },
+    { value: 'highly-recommend', label: '强烈推荐' },
+    { value: 'recommend', label: '推荐' },
+    { value: 'neutral', label: '一般' },
+    { value: 'not-recommend', label: '不推荐' },
   ];
 
   const sortOptions = [
-    { value: 'publishedAt', label: '最新发布 ⏰' },
-    { value: 'rating', label: '评分最高 ⭐' },
-    { value: 'views', label: '浏览最多 👀' },
-    { value: 'likes', label: '点赞最多 💕' },
+    { value: 'publishedAt', label: '最新发布' },
+    { value: 'rating', label: '评分最高' },
+    { value: 'views', label: '浏览最多' },
+    { value: 'likes', label: '点赞最多' },
   ];
 
   useEffect(() => {
@@ -71,7 +71,7 @@ const BookRecommendationsPage = () => {
         limit: pagination.limit,
         category: searchParams.get('category') || '',
         search: searchParams.get('search') || '',
-        difficulty: searchParams.get('difficulty') || '',
+        difficulty: searchParams.get('readingType') || '',
         recommendation: searchParams.get('recommendation') || '',
         sortBy: searchParams.get('sortBy') || 'publishedAt',
       };
@@ -112,8 +112,8 @@ const BookRecommendationsPage = () => {
       case 'category':
         setSelectedCategory(value);
         break;
-      case 'difficulty':
-        setSelectedDifficulty(value);
+      case 'readingType':
+        setSelectedReadingType(value);
         break;
       case 'recommendation':
         setSelectedRecommendation(value);
@@ -142,30 +142,30 @@ const BookRecommendationsPage = () => {
 
   const getRecommendationLabel = (recommendation: string) => {
     const labels = {
-      'highly-recommend': '强烈推荐 💖',
-      'recommend': '推荐 👍',
-      'neutral': '一般 😐',
-      'not-recommend': '不推荐 👎',
+      'highly-recommend': '强烈推荐',
+      'recommend': '推荐',
+      'neutral': '一般',
+      'not-recommend': '不推荐',
     };
-    return labels[recommendation as keyof typeof labels] || '一般 😐';
+    return labels[recommendation as keyof typeof labels] || '一般';
   };
 
-  const getDifficultyColor = (difficulty: string) => {
+  const getReadingTypeColor = (readingType: string) => {
     const colors = {
-      'beginner': 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-      'intermediate': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200',
-      'advanced': 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200',
+      'light': 'bg-anime-pink-100 text-anime-pink-800 dark:bg-anime-pink-900 dark:text-anime-pink-200',
+      'serious': 'bg-anime-purple-100 text-anime-purple-800 dark:bg-anime-purple-900 dark:text-anime-purple-200',
+      'professional': 'bg-anime-blue-100 text-anime-blue-800 dark:bg-anime-blue-900 dark:text-anime-blue-200',
     };
-    return colors[difficulty as keyof typeof colors] || colors.intermediate;
+    return colors[readingType as keyof typeof colors] || colors.light;
   };
 
-  const getDifficultyLabel = (difficulty: string) => {
+  const getReadingTypeLabel = (readingType: string) => {
     const labels = {
-      'beginner': '入门 🌱',
-      'intermediate': '中级 🌿',
-      'advanced': '高级 🌳',
+      'light': '轻松阅读',
+      'serious': '深度阅读', 
+      'professional': '专业学习',
     };
-    return labels[difficulty as keyof typeof labels] || '中级 🌿';
+    return labels[readingType as keyof typeof labels] || '轻松阅读';
   };
 
   if (loading) {
@@ -189,7 +189,7 @@ const BookRecommendationsPage = () => {
             animate={{ opacity: 1, y: 0 }}
             className="text-4xl font-heading font-bold text-white mb-4 anime-text-glow"
           >
-            📚 书籍推荐 ✨
+            书籍推荐
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -197,7 +197,7 @@ const BookRecommendationsPage = () => {
             transition={{ delay: 0.1 }}
             className="text-xl text-white/90"
           >
-            发现好书，分享阅读体验 💖
+            发现好书，分享阅读体验
           </motion.p>
         </div>
       </div>
@@ -212,7 +212,7 @@ const BookRecommendationsPage = () => {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="搜索书籍标题、作者或标签... 🔍"
+                placeholder="搜索书籍标题、作者或标签..."
                 className="w-full pl-10 pr-4 py-3 rounded-kawaii bg-white dark:bg-dark-card text-gray-900 dark:text-white focus:ring-2 focus:ring-anime-purple-500 focus:border-transparent transition-colors duration-200 border-none outline-none"
               />
             </div>
@@ -235,13 +235,13 @@ const BookRecommendationsPage = () => {
             </div>
 
             <select
-              value={selectedDifficulty}
-              onChange={(e) => handleFilterChange('difficulty', e.target.value)}
+              value={selectedReadingType}
+              onChange={(e) => handleFilterChange('readingType', e.target.value)}
               className="kawaii-card px-3 py-2 rounded-kawaii text-sm border-none focus:ring-2 focus:ring-anime-purple-500"
             >
-              {difficulties.map((difficulty) => (
-                <option key={difficulty.value} value={difficulty.value}>
-                  {difficulty.label}
+              {readingTypes.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
                 </option>
               ))}
             </select>
@@ -288,10 +288,10 @@ const BookRecommendationsPage = () => {
                 <Book className="w-12 h-12 text-white" />
               </div>
               <h3 className="text-xl font-heading font-semibold text-gray-900 dark:text-white mb-2">
-                还没有书籍推荐 📚
+                还没有书籍推荐
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">
-                成为第一个分享好书的人吧！ ✨
+                成为第一个分享好书的人吧！
               </p>
               <Link
                 to="/book/create"
@@ -360,8 +360,8 @@ const BookRecommendationsPage = () => {
                   )}
 
                   <div className="flex items-center justify-between mb-3">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(book.difficulty)}`}>
-                      {getDifficultyLabel(book.difficulty)}
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getReadingTypeColor(book.difficulty)}`}>
+                      {getReadingTypeLabel(book.difficulty)}
                     </span>
                     <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
                       <Calendar className="w-3 h-3 mr-1" />

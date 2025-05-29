@@ -32,7 +32,7 @@ const CreateBookRecommendationPage = () => {
     review: '',
     tags: [] as string[],
     readingStatus: 'finished',
-    difficulty: 'intermediate',
+    difficulty: 'light',
     recommendation: 'recommend',
     isPublished: false
   });
@@ -40,24 +40,24 @@ const CreateBookRecommendationPage = () => {
   const [loading, setLoading] = useState(false);
   const [tagInput, setTagInput] = useState('');
 
-  const difficulties = [
-    { value: 'beginner', label: '入门 🌱' },
-    { value: 'intermediate', label: '中级 🌿' },
-    { value: 'advanced', label: '高级 🌳' },
+  const readingTypes = [
+    { value: 'light', label: '轻松阅读' },
+    { value: 'serious', label: '深度阅读' },
+    { value: 'professional', label: '专业学习' },
   ];
 
   const recommendations = [
-    { value: 'highly-recommend', label: '强烈推荐 💖' },
-    { value: 'recommend', label: '推荐 👍' },
-    { value: 'neutral', label: '一般 😐' },
-    { value: 'not-recommend', label: '不推荐 👎' },
+    { value: 'highly-recommend', label: '强烈推荐' },
+    { value: 'recommend', label: '推荐' },
+    { value: 'neutral', label: '一般' },
+    { value: 'not-recommend', label: '不推荐' },
   ];
 
   const readingStatuses = [
-    { value: 'want-to-read', label: '想读 📝' },
-    { value: 'reading', label: '在读 📖' },
-    { value: 'finished', label: '读完 ✅' },
-    { value: 'abandoned', label: '弃读 ❌' },
+    { value: 'want-to-read', label: '想读' },
+    { value: 'reading', label: '在读' },
+    { value: 'finished', label: '读完' },
+    { value: 'abandoned', label: '弃读' },
   ];
 
   useEffect(() => {
@@ -222,10 +222,10 @@ const CreateBookRecommendationPage = () => {
             </button>
           </div>
           <h1 className="text-3xl font-heading font-bold text-white anime-text-glow">
-            {isEditing ? '编辑书籍推荐 ✏️' : '推荐一本好书 📚✨'}
+            {isEditing ? '编辑书籍推荐' : '推荐一本好书'}
           </h1>
           <p className="text-white/90 mt-2">
-            分享你的阅读体验，帮助他人发现好书 💖
+            分享你的阅读体验，帮助他人发现好书
           </p>
         </div>
       </div>
@@ -241,7 +241,7 @@ const CreateBookRecommendationPage = () => {
             >
               <h2 className="text-xl font-heading font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                 <Search className="w-5 h-5 mr-2 text-anime-purple-600" />
-                搜索书籍 🔍
+                搜索书籍
               </h2>
               <div className="flex space-x-4">
                 <input
@@ -306,7 +306,7 @@ const CreateBookRecommendationPage = () => {
             >
               <h2 className="text-xl font-heading font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
                 <BookOpen className="w-5 h-5 mr-2 text-anime-purple-600" />
-                选中的书籍 📖
+                选中的书籍
               </h2>
               <div className="flex items-start space-x-4">
                 {selectedBook.coverImage && (
@@ -354,7 +354,7 @@ const CreateBookRecommendationPage = () => {
             >
               <h2 className="text-xl font-heading font-semibold text-gray-900 dark:text-white flex items-center">
                 <Sparkles className="w-5 h-5 mr-2 text-anime-purple-600" />
-                书籍信息 📝
+                书籍信息
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -442,7 +442,7 @@ const CreateBookRecommendationPage = () => {
           >
             <h2 className="text-xl font-heading font-semibold text-gray-900 dark:text-white flex items-center">
               <Star className="w-5 h-5 mr-2 text-anime-yellow-500" />
-              我的评价 ✨
+              我的评价
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -465,7 +465,7 @@ const CreateBookRecommendationPage = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  难度等级
+                  阅读类型
                 </label>
                 <select
                   name="difficulty"
@@ -473,9 +473,9 @@ const CreateBookRecommendationPage = () => {
                   onChange={handleInputChange}
                   className="anime-input"
                 >
-                  {difficulties.map((diff) => (
-                    <option key={diff.value} value={diff.value}>
-                      {diff.label}
+                  {readingTypes.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
                     </option>
                   ))}
                 </select>
@@ -570,7 +570,7 @@ const CreateBookRecommendationPage = () => {
                 className="w-4 h-4 text-anime-purple-600 rounded focus:ring-anime-purple-500"
               />
               <label className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                立即发布 🌟
+                立即发布
               </label>
             </div>
           </motion.div>

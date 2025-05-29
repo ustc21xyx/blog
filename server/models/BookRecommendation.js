@@ -95,8 +95,8 @@ const bookRecommendationSchema = new mongoose.Schema({
   },
   difficulty: {
     type: String,
-    enum: ['beginner', 'intermediate', 'advanced'],
-    default: 'intermediate'
+    enum: ['light', 'serious', 'professional'],
+    default: 'light'
   },
   recommendation: {
     type: String,
