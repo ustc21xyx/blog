@@ -12,6 +12,19 @@ const router = express.Router();
 const cache = new Map();
 const CACHE_TTL = 10 * 60 * 1000; // 10分钟缓存
 
+// 处理语言代码映射 - MongoDB全文索引只支持特定语言代码
+const normalizeLanguage = (lang) => {
+  if (!lang) return 'zh';
+  const langMap = {
+    'zh-CN': 'zh',
+    'zh-TW': 'zh', 
+    'zh-HK': 'zh',
+    'en-US': 'en',
+    'en-GB': 'en'
+  };
+  return langMap[lang] || lang.toLowerCase();
+};
+
 const getCacheKey = (key, params = {}) => {
   return `book_${key}_${JSON.stringify(params)}`;
 };
@@ -94,7 +107,7 @@ router.get('/search', async (req, res) => {
               publishedDate: volumeInfo.publishedDate || '',
               pageCount: volumeInfo.pageCount || 0,
               categories: volumeInfo.categories || [],
-              language: volumeInfo.language || 'zh',
+              language: normalizeLanguage(volumeInfo.language),
               isbn: volumeInfo.industryIdentifiers?.find(id => 
                 id.type === 'ISBN_13' || id.type === 'ISBN_10'
               )?.identifier || '',
@@ -192,7 +205,7 @@ router.get('/details/:googleBooksId', async (req, res) => {
       publisher: volumeInfo.publisher || '',
       pageCount: volumeInfo.pageCount || 0,
       categories: volumeInfo.categories || [],
-      language: volumeInfo.language || 'zh',
+      language: normalizeLanguage(volumeInfo.language),
       isbn: volumeInfo.industryIdentifiers?.find(id => 
         id.type === 'ISBN_13' || id.type === 'ISBN_10'
       )?.identifier || '',
@@ -396,13 +409,13 @@ router.post('/', auth, [
       publishedDate,
       pageCount,
       categories: categories || [],
-      language: language || 'zh',
+      language: normalizeLanguage(language),
       rating,
       review,
       tags: tags || [],
       recommendedBy: req.user._id,
       readingStatus: readingStatus || 'finished',
-      difficulty: difficulty || 'intermediate',
+      difficulty: difficulty || 'light',
       recommendation,
       isPublished: isPublished || false
     });
