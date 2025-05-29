@@ -389,16 +389,15 @@
     }
   }
 
-  /* Layout 动画优化 */
-  [data-framer-component-type="motion"] {
-    transform-origin: center;
-  }
-
-  /* 确保卡片在变换过程中保持圆角 */
+  /* 卡片性能优化 */
   .kawaii-card {
     will-change: transform;
     backface-visibility: hidden;
-    transform-style: preserve-3d;
+  }
+  
+  /* 平滑变换 */
+  .transition-all {
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .pulse-ring {
