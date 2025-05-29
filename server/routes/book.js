@@ -295,7 +295,15 @@ router.post('/', auth, [
     .withMessage('Review must be between 10 and 2000 characters'),
   body('recommendation')
     .isIn(['highly-recommend', 'recommend', 'neutral', 'not-recommend'])
-    .withMessage('Invalid recommendation value')
+    .withMessage('Invalid recommendation value'),
+  body('difficulty')
+    .optional()
+    .isIn(['light', 'serious', 'professional'])
+    .withMessage('Invalid difficulty value'),
+  body('readingStatus')
+    .optional()
+    .isIn(['want-to-read', 'reading', 'finished', 'abandoned'])
+    .withMessage('Invalid reading status value')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
