@@ -135,7 +135,14 @@ bookRecommendationSchema.virtual('commentCount').get(function() {
 
 bookRecommendationSchema.set('toJSON', { virtuals: true });
 
-bookRecommendationSchema.index({ title: 'text', author: 'text', tags: 'text' });
+// 使用不依赖语言的文本索引
+bookRecommendationSchema.index({ 
+  title: 'text', 
+  author: 'text', 
+  tags: 'text' 
+}, { 
+  default_language: 'none'  // 禁用语言特定的文本索引
+});
 bookRecommendationSchema.index({ createdAt: -1 });
 bookRecommendationSchema.index({ publishedAt: -1 });
 bookRecommendationSchema.index({ rating: -1 });

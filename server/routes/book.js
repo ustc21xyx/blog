@@ -399,7 +399,7 @@ router.post('/', auth, [
       isPublished
     } = req.body;
 
-    const book = new BookRecommendation({
+    const bookData = {
       title,
       author,
       isbn,
@@ -409,7 +409,6 @@ router.post('/', auth, [
       publishedDate,
       pageCount,
       categories: categories || [],
-      language: normalizeLanguage(language),
       rating,
       review,
       tags: tags || [],
@@ -418,7 +417,14 @@ router.post('/', auth, [
       difficulty: difficulty || 'light',
       recommendation,
       isPublished: isPublished || false
-    });
+    };
+
+    // 暂时不设置language字段，避免MongoDB文本索引语言问题
+    // if (language) {
+    //   bookData.language = normalizeLanguage(language);
+    // }
+
+    const book = new BookRecommendation(bookData);
 
     await book.save();
     await book.populate('recommendedBy', 'username displayName avatar');
