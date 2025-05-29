@@ -60,40 +60,89 @@ router.get('/search', async (req, res) => {
     }
 
     const searchQuery = encodeURIComponent(q.trim());
-    const url = `https://www.googleapis.com/books/v1/volumes?q=${searchQuery}&maxResults=${maxResults}&startIndex=${startIndex}&langRestrict=zh&printType=books`;
+    // 尝试多种搜索策略
+    const searchUrls = [
+      `https://www.googleapis.com/books/v1/volumes?q=${searchQuery}&maxResults=${maxResults}&startIndex=${startIndex}&printType=books`,
+      `https://www.googleapis.com/books/v1/volumes?q=intitle:${searchQuery}&maxResults=${maxResults}&startIndex=${startIndex}&printType=books`,
+      `https://www.googleapis.com/books/v1/volumes?q=${searchQuery}&maxResults=${maxResults}&startIndex=${startIndex}&langRestrict=zh&printType=books`
+    ];
 
-    const response = await axios.get(url, {
-      timeout: 5000,
-      headers: {
-        'User-Agent': 'AnimeBookBlog/1.0'
+    let allBooks = [];
+    let totalItems = 0;
+
+    // 尝试多个搜索URL，合并结果
+    for (const url of searchUrls) {
+      try {
+        const response = await axios.get(url, {
+          timeout: 5000,
+          headers: {
+            'User-Agent': 'AnimeBookBlog/1.0'
+          }
+        });
+
+        if (response.data.items) {
+          const books = response.data.items.map(item => {
+            const volumeInfo = item.volumeInfo || {};
+            const imageLinks = volumeInfo.imageLinks || {};
+            
+            return {
+              id: item.id,
+              title: volumeInfo.title || 'Unknown Title',
+              authors: volumeInfo.authors || ['Unknown Author'],
+              author: (volumeInfo.authors || ['Unknown Author']).join(', '),
+              description: volumeInfo.description || '',
+              publishedDate: volumeInfo.publishedDate || '',
+              pageCount: volumeInfo.pageCount || 0,
+              categories: volumeInfo.categories || [],
+              language: volumeInfo.language || 'zh',
+              isbn: volumeInfo.industryIdentifiers?.find(id => 
+                id.type === 'ISBN_13' || id.type === 'ISBN_10'
+              )?.identifier || '',
+              coverImage: imageLinks.thumbnail || imageLinks.smallThumbnail || '',
+              googleBooksId: item.id
+            };
+          });
+
+          allBooks.push(...books);
+          totalItems = Math.max(totalItems, response.data.totalItems || 0);
+        }
+      } catch (err) {
+        console.warn(`Search URL failed: ${url}`, err.message);
+        continue;
       }
+    }
+
+    // 去重（基于googleBooksId）
+    const uniqueBooks = allBooks.filter((book, index, self) => 
+      index === self.findIndex(b => b.googleBooksId === book.googleBooksId)
+    );
+
+    // 按相关性排序：标题匹配度 > 作者匹配度 > 其他
+    const searchLower = q.toLowerCase();
+    const sortedBooks = uniqueBooks.sort((a, b) => {
+      const aTitle = a.title.toLowerCase();
+      const bTitle = b.title.toLowerCase();
+      const aAuthor = a.author.toLowerCase();
+      const bAuthor = b.author.toLowerCase();
+
+      // 完全标题匹配优先
+      if (aTitle.includes(searchLower) && !bTitle.includes(searchLower)) return -1;
+      if (!aTitle.includes(searchLower) && bTitle.includes(searchLower)) return 1;
+      
+      // 作者匹配度
+      if (aAuthor.includes(searchLower) && !bAuthor.includes(searchLower)) return -1;
+      if (!aAuthor.includes(searchLower) && bAuthor.includes(searchLower)) return 1;
+
+      // 标题开头匹配优先
+      if (aTitle.startsWith(searchLower) && !bTitle.startsWith(searchLower)) return -1;
+      if (!aTitle.startsWith(searchLower) && bTitle.startsWith(searchLower)) return 1;
+
+      return 0;
     });
 
-    const books = response.data.items?.map(item => {
-      const volumeInfo = item.volumeInfo || {};
-      const imageLinks = volumeInfo.imageLinks || {};
-      
-      return {
-        id: item.id,
-        title: volumeInfo.title || 'Unknown Title',
-        authors: volumeInfo.authors || ['Unknown Author'],
-        author: (volumeInfo.authors || ['Unknown Author']).join(', '),
-        description: volumeInfo.description || '',
-        publishedDate: volumeInfo.publishedDate || '',
-        pageCount: volumeInfo.pageCount || 0,
-        categories: volumeInfo.categories || [],
-        language: volumeInfo.language || 'zh',
-        isbn: volumeInfo.industryIdentifiers?.find(id => 
-          id.type === 'ISBN_13' || id.type === 'ISBN_10'
-        )?.identifier || '',
-        coverImage: imageLinks.thumbnail || imageLinks.smallThumbnail || '',
-        googleBooksId: item.id
-      };
-    }) || [];
-
     const result = {
-      books,
-      totalItems: response.data.totalItems || 0
+      books: sortedBooks.slice(0, maxResults),
+      totalItems: uniqueBooks.length
     };
 
     setCache(cacheKey, result);

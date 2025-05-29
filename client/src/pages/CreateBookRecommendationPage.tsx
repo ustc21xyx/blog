@@ -260,6 +260,13 @@ const CreateBookRecommendationPage = () => {
                 >
                   {isSearching ? '搜索中...' : '搜索'}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedBook({ id: '', title: '', author: '', authors: [], coverImage: '', description: '', publishedDate: '', pageCount: 0, categories: [], isbn: '', googleBooksId: '', language: 'zh' })}
+                  className="anime-button-secondary px-6 py-3"
+                >
+                  手动添加
+                </button>
               </div>
 
               {searchResults.length > 0 && (
