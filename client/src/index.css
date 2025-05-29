@@ -389,6 +389,18 @@
     }
   }
 
+  /* Layout 动画优化 */
+  [data-framer-component-type="motion"] {
+    transform-origin: center;
+  }
+
+  /* 确保卡片在变换过程中保持圆角 */
+  .kawaii-card {
+    will-change: transform;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+  }
+
   .pulse-ring {
     position: relative;
   }

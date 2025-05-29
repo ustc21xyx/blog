@@ -367,6 +367,7 @@ const BookRecommendationsPage = () => {
             {books.map((book, index) => (
               <motion.article
                 key={book._id}
+                layoutId={`book-card-${book._id}`}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 whileHover={{ 
@@ -375,6 +376,7 @@ const BookRecommendationsPage = () => {
                   boxShadow: "0 20px 40px rgba(160, 113, 255, 0.3)"
                 }}
                 transition={{ 
+                  layout: { duration: 0.8, type: "spring", stiffness: 200, damping: 25 },
                   duration: 0.3, 
                   delay: index * 0.05,
                   type: "spring",
@@ -384,23 +386,29 @@ const BookRecommendationsPage = () => {
                 className="kawaii-card overflow-hidden cursor-pointer anime-sparkle group"
                 onClick={() => setSelectedBook(book)}
               >
-                {book.coverImage ? (
-                  <div className="aspect-[3/4] bg-gradient-kawaii relative overflow-hidden">
+                <motion.div
+                  layoutId={`book-image-${book._id}`}
+                  className="aspect-[3/4] bg-gradient-kawaii relative overflow-hidden"
+                >
+                  {book.coverImage ? (
                     <img
                       src={book.coverImage}
                       alt={book.title}
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                       loading="lazy"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  </div>
-                ) : (
-                  <div className="aspect-[3/4] bg-gradient-kawaii flex items-center justify-center">
-                    <Book className="w-12 h-12 text-white/80" />
-                  </div>
-                )}
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Book className="w-12 h-12 text-white/80" />
+                    </div>
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                </motion.div>
 
-                <div className="p-3">
+                <motion.div
+                  layoutId={`book-content-${book._id}`}
+                  className="p-3"
+                >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center text-anime-yellow-500">
                       <Star className="w-3 h-3 fill-current" />
@@ -411,13 +419,19 @@ const BookRecommendationsPage = () => {
                     </span>
                   </div>
 
-                  <h3 className="text-sm font-heading font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2 group-hover:text-anime-purple-600 transition-colors duration-200">
+                  <motion.h3
+                    layoutId={`book-title-${book._id}`}
+                    className="text-sm font-heading font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2 group-hover:text-anime-purple-600 transition-colors duration-200"
+                  >
                     {book.title}
-                  </h3>
+                  </motion.h3>
  
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 line-clamp-1">
+                  <motion.p
+                    layoutId={`book-author-${book._id}`}
+                    className="text-xs text-gray-600 dark:text-gray-400 mb-2 line-clamp-1"
+                  >
                     {book.author}
-                  </p>
+                  </motion.p>
 
                   <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                     <div className="flex items-center space-x-2">
@@ -440,7 +454,7 @@ const BookRecommendationsPage = () => {
                       <span>{book.views}</span>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               </motion.article>
             ))}
           </div>
@@ -485,26 +499,18 @@ const BookRecommendationsPage = () => {
       </div>
 
       {/* Modal for Selected Book */}
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {selectedBook && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.3 }}
             className="fixed inset-0 bg-black/60 backdrop-blur-lg flex items-center justify-center p-4 z-50"
             onClick={() => setSelectedBook(null)}
           >
             <motion.div
-              initial={{ scale: 0.8, opacity: 0, y: 50 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.8, opacity: 0, y: 50 }}
-              transition={{ 
-                type: "spring", 
-                stiffness: 400, 
-                damping: 25,
-                duration: 0.3
-              }}
+              layoutId={`book-card-${selectedBook._id}`}
               className="kawaii-card shadow-glow-purple p-6 md:p-8 max-w-4xl w-full max-h-[95vh] overflow-y-auto relative anime-scrollbar"
               onClick={(e) => e.stopPropagation()}
             >
@@ -516,25 +522,41 @@ const BookRecommendationsPage = () => {
               </button>
               
               <div className="lg:flex lg:space-x-8">
-                {selectedBook.coverImage && (
-                  <div className="lg:w-1/3 mb-6 lg:mb-0 flex-shrink-0">
-                    <div className="relative group">
+                <div className="lg:w-1/3 mb-6 lg:mb-0 flex-shrink-0">
+                  <motion.div
+                    layoutId={`book-image-${selectedBook._id}`}
+                    className="relative group"
+                  >
+                    {selectedBook.coverImage ? (
                       <img
                         src={selectedBook.coverImage}
                         alt={selectedBook.title}
                         className="w-full h-auto object-contain rounded-kawaii shadow-anime-lg transition-transform duration-300 group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-anime-purple-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-kawaii" />
-                    </div>
-                  </div>
-                )}
-                <div className="lg:w-2/3">
-                  <h2 className="text-2xl md:text-4xl font-heading font-bold anime-gradient-text mb-3">
+                    ) : (
+                      <div className="aspect-[3/4] bg-gradient-kawaii flex items-center justify-center rounded-kawaii">
+                        <Book className="w-16 h-16 text-white/80" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-anime-purple-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-kawaii" />
+                  </motion.div>
+                </div>
+                <motion.div
+                  layoutId={`book-content-${selectedBook._id}`}
+                  className="lg:w-2/3"
+                >
+                  <motion.h2
+                    layoutId={`book-title-${selectedBook._id}`}
+                    className="text-2xl md:text-4xl font-heading font-bold anime-gradient-text mb-3"
+                  >
                     {selectedBook.title}
-                  </h2>
-                  <p className="text-lg text-gray-700 dark:text-gray-300 mb-4">
+                  </motion.h2>
+                  <motion.p
+                    layoutId={`book-author-${selectedBook._id}`}
+                    className="text-lg text-gray-700 dark:text-gray-300 mb-4"
+                  >
                     作者: <span className="font-semibold text-anime-purple-600 dark:text-anime-purple-400">{selectedBook.author}</span>
-                  </p>
+                  </motion.p>
                   <div className="flex items-center space-x-6 mb-4">
                     <div className="flex items-center space-x-2">
                       <Star className="w-6 h-6 text-anime-yellow-500 fill-current" />
@@ -561,7 +583,7 @@ const BookRecommendationsPage = () => {
                       {getReadingTypeLabel(selectedBook.difficulty)}
                     </span>
                   </div>
-                </div>
+                </motion.div>
               </div>
 
               {selectedBook.description && (
