@@ -3,13 +3,18 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Search, Filter, Calendar, Eye, Heart, MessageCircle, Star, Book, Sparkles, TrendingUp, Clock, BookOpen, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
+import toast from 'react-hot-toast';
 import { bookApi } from '../utils/api';
+import { useAuthStore } from '../store/authStore';
 import type { BookRecommendation, BookRecommendationParams } from '../types';
 
 const BookRecommendationsPage = () => {
   const [books, setBooks] = useState<BookRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedBook, setSelectedBook] = useState<BookRecommendation | null>(null);
+  const [commentText, setCommentText] = useState(''); // For modal comment
+  const [submittingComment, setSubmittingComment] = useState(false); // For modal comment
+  const { isAuthenticated } = useAuthStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedReadingType, setSelectedReadingType] = useState('');
@@ -131,6 +136,60 @@ const BookRecommendationsPage = () => {
     setSearchParams(newParams);
   };
 
+  const handleLikeOnCard = async (bookId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent modal from opening
+    if (!isAuthenticated) {
+      toast.error('Please login to like recommendations');
+      return;
+    }
+    try {
+      const response = await bookApi.likeRecommendation(bookId);
+      setBooks(prevBooks =>
+        prevBooks.map(b =>
+          b._id === bookId
+            ? { ...b, likeCount: response.data.likeCount, hasLiked: response.data.hasLiked }
+            : b
+        )
+      );
+      if (selectedBook && selectedBook._id === bookId) {
+        setSelectedBook(prev => prev ? { ...prev, likeCount: response.data.likeCount, hasLiked: response.data.hasLiked } : null);
+      }
+    } catch (error) {
+      toast.error('Failed to update like status');
+    }
+  };
+  
+  const handleCommentSubmitInModal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+      toast.error('Please login to comment');
+      return;
+    }
+    if (!selectedBook || !commentText.trim()) return;
+
+    try {
+      setSubmittingComment(true);
+      const response = await bookApi.addComment(selectedBook._id, commentText);
+      const updatedBook = {
+        ...selectedBook,
+        comments: [...selectedBook.comments, response.data.comment],
+        commentCount: selectedBook.commentCount + 1,
+      };
+      setSelectedBook(updatedBook);
+      setBooks(prevBooks =>
+        prevBooks.map(b =>
+          b._id === selectedBook._id ? updatedBook : b
+        )
+      );
+      setCommentText('');
+      toast.success('Comment added successfully');
+    } catch (error) {
+      toast.error('Failed to add comment');
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+ 
   const getRecommendationColor = (recommendation: string) => {
     const colors = {
       'highly-recommend': 'bg-anime-pink-100 text-anime-pink-800 dark:bg-anime-pink-900 dark:text-anime-pink-200',
@@ -397,11 +456,19 @@ const BookRecommendationsPage = () => {
                         <Eye className="w-3 h-3" />
                         <span>{book.views}</span>
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <Heart className="w-3 h-3" />
+                      <button
+                        onClick={(e) => handleLikeOnCard(book._id, e)}
+                        className={`flex items-center space-x-1 transition-colors duration-200 ${
+                          book.hasLiked ? 'text-red-500' : 'hover:text-red-500'
+                        }`}
+                      >
+                        <Heart className={`w-3 h-3 ${book.hasLiked ? 'fill-current' : ''}`} />
                         <span>{book.likeCount}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
+                      </button>
+                      <div
+                        className="flex items-center space-x-1 cursor-pointer hover:text-anime-purple-500"
+                        onClick={(e) => { e.stopPropagation(); setSelectedBook(book);}}
+                      >
                         <MessageCircle className="w-3 h-3" />
                         <span>{book.commentCount}</span>
                       </div>
@@ -540,19 +607,58 @@ const BookRecommendationsPage = () => {
                 {selectedBook.pageCount && <p>页数: {selectedBook.pageCount}</p>}
               </div>
               
-              <div className="mt-6 flex justify-end">
-                <Link
-                  to={`/book/${selectedBook._id}`} // This link can be kept if a full detail page is still desired for SEO or direct linking
-                  className="kawaii-button-secondary mr-2"
-                  onClick={(e) => {
-                    // If we want to prevent navigation and only use modal, stop propagation
-                    // e.preventDefault();
-                    // Or, if this button is meant to go to a full page, let it navigate.
-                    // For now, let's assume it's for a potential full page.
-                  }}
-                >
-                  查看完整页面
-                </Link>
+              {/* Comments Section in Modal */}
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-dark-border">
+                <h3 className="text-xl font-heading font-semibold text-gray-800 dark:text-white mb-4">
+                  评论 ({selectedBook.commentCount})
+                </h3>
+                {/* Comment Form */}
+                {isAuthenticated ? (
+                  <form onSubmit={handleCommentSubmitInModal} className="mb-6">
+                    <textarea
+                      value={commentText}
+                      onChange={(e) => setCommentText(e.target.value)}
+                      placeholder="写下你的评论..."
+                      rows={3}
+                      className="anime-input resize-none w-full"
+                    />
+                    <div className="mt-2 flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={submittingComment || !commentText.trim()}
+                        className="kawaii-button-primary disabled:opacity-50"
+                      >
+                        {submittingComment ? '提交中...' : '发表评论'}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                    请 <Link to="/login" className="text-anime-purple-600 hover:underline">登录</Link> 后发表评论。
+                  </p>
+                )}
+                {/* Comments List */}
+                <div className="space-y-4 max-h-60 overflow-y-auto pr-2">
+                  {selectedBook.comments.length > 0 ? selectedBook.comments.map((comment) => (
+                    <div key={comment._id} className="flex space-x-3">
+                      <img
+                        src={comment.author.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(comment.author.displayName)}&background=random`}
+                        alt={comment.author.displayName}
+                        className="w-8 h-8 rounded-full flex-shrink-0"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-semibold text-gray-800 dark:text-gray-200">{comment.author.displayName}</span>
+                          <span className="text-gray-500 dark:text-gray-400">{format(new Date(comment.createdAt), 'yyyy-MM-dd HH:mm')}</span>
+                        </div>
+                        <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{comment.content}</p>
+                      </div>
+                    </div>
+                  )).reverse() : <p className="text-sm text-gray-500 dark:text-gray-400">暂无评论。</p>}
+                </div>
+              </div>
+
+              <div className="mt-8 flex justify-end">
                 <button
                   onClick={() => setSelectedBook(null)}
                   className="kawaii-button"
