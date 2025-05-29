@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Search, Filter, Calendar, Eye, Heart, MessageCircle, Star, Book, Sparkles, TrendingUp, Clock, BookOpen } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Search, Filter, Calendar, Eye, Heart, MessageCircle, Star, Book, Sparkles, TrendingUp, Clock, BookOpen, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { bookApi } from '../utils/api';
-import type { BookRecommendation } from '../types';
+import type { BookRecommendation, BookRecommendationParams } from '../types';
 
 const BookRecommendationsPage = () => {
   const [books, setBooks] = useState<BookRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedBook, setSelectedBook] = useState<BookRecommendation | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedReadingType, setSelectedReadingType] = useState('');
@@ -73,9 +74,9 @@ const BookRecommendationsPage = () => {
         search: searchParams.get('search') || '',
         difficulty: searchParams.get('readingType') || '',
         recommendation: searchParams.get('recommendation') || '',
-        sortBy: searchParams.get('sortBy') || 'publishedAt',
+        sortBy: (searchParams.get('sortBy') || 'publishedAt') as BookRecommendationParams['sortBy'],
       };
-
+ 
       const response = await bookApi.getRecommendations(params);
       setBooks(response.data.books);
       setPagination(response.data.pagination);
@@ -333,15 +334,13 @@ const BookRecommendationsPage = () => {
                     </div>
                   </div>
 
-                  <h3 className="text-lg font-heading font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2">
-                    <Link
-                      to={`/book/${book._id}`}
-                      className="hover:text-anime-purple-600 transition-colors duration-200"
-                    >
-                      {book.title}
-                    </Link>
+                  <h3
+                    className="text-lg font-heading font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2 cursor-pointer hover:text-anime-purple-600 transition-colors duration-200"
+                    onClick={() => setSelectedBook(book)}
+                  >
+                    {book.title}
                   </h3>
-
+ 
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                     作者: {book.author}
                   </p>
@@ -451,6 +450,120 @@ const BookRecommendationsPage = () => {
           </div>
         )}
       </div>
+
+      {/* Modal for Selected Book */}
+      <AnimatePresence>
+        {selectedBook && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            onClick={() => setSelectedBook(null)} // Close on backdrop click
+          >
+            <motion.div
+              initial={{ scale: 0.7, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.7, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="bg-white dark:bg-dark-card rounded-xl shadow-2xl p-6 md:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto relative"
+              onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal
+            >
+              <button
+                onClick={() => setSelectedBook(null)}
+                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors"
+              >
+                <X size={24} />
+              </button>
+              
+              <div className="md:flex md:space-x-6">
+                {selectedBook.coverImage && (
+                  <div className="md:w-1/3 mb-4 md:mb-0 flex-shrink-0">
+                    <img
+                      src={selectedBook.coverImage}
+                      alt={selectedBook.title}
+                      className="w-full h-auto object-contain rounded-lg shadow-md"
+                    />
+                  </div>
+                )}
+                <div className="md:w-2/3">
+                  <h2 className="text-2xl md:text-3xl font-heading font-bold text-gray-900 dark:text-white mb-2">
+                    {selectedBook.title}
+                  </h2>
+                  <p className="text-lg text-gray-700 dark:text-gray-300 mb-3">
+                    作者: {selectedBook.author}
+                  </p>
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Star className="w-5 h-5 text-anime-yellow-500 fill-current" />
+                    <span className="text-xl font-semibold text-gray-800 dark:text-gray-200">{selectedBook.rating}/10</span>
+                  </div>
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold mb-3 ${getRecommendationColor(selectedBook.recommendation)}`}>
+                    {getRecommendationLabel(selectedBook.recommendation)}
+                  </span>
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ml-2 mb-3 ${getReadingTypeColor(selectedBook.difficulty)}`}>
+                    {getReadingTypeLabel(selectedBook.difficulty)}
+                  </span>
+                </div>
+              </div>
+
+              {selectedBook.description && (
+                <div className="mt-6 pt-4 border-t border-gray-200 dark:border-dark-border">
+                  <h3 className="text-xl font-heading font-semibold text-gray-800 dark:text-white mb-2">简介</h3>
+                  <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap text-sm leading-relaxed">
+                    {selectedBook.description}
+                  </p>
+                </div>
+              )}
+
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-dark-border">
+                <h3 className="text-xl font-heading font-semibold text-gray-800 dark:text-white mb-2">评价</h3>
+                <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap text-sm leading-relaxed">
+                  {selectedBook.review}
+                </p>
+              </div>
+              
+              {selectedBook.tags && selectedBook.tags.length > 0 && (
+                <div className="mt-6 pt-4 border-t border-gray-200 dark:border-dark-border">
+                  <h3 className="text-xl font-heading font-semibold text-gray-800 dark:text-white mb-2">标签</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedBook.tags.map(tag => (
+                      <span key={tag} className="tag text-xs">{tag}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-dark-border text-sm text-gray-500 dark:text-gray-400">
+                <p>推荐人: {selectedBook.recommendedBy.displayName}</p>
+                <p>发布日期: {format(new Date(selectedBook.publishedAt || selectedBook.createdAt), 'yyyy年MM月dd日')}</p>
+                {selectedBook.isbn && <p>ISBN: {selectedBook.isbn}</p>}
+                {selectedBook.pageCount && <p>页数: {selectedBook.pageCount}</p>}
+              </div>
+              
+              <div className="mt-6 flex justify-end">
+                <Link
+                  to={`/book/${selectedBook._id}`} // This link can be kept if a full detail page is still desired for SEO or direct linking
+                  className="kawaii-button-secondary mr-2"
+                  onClick={(e) => {
+                    // If we want to prevent navigation and only use modal, stop propagation
+                    // e.preventDefault();
+                    // Or, if this button is meant to go to a full page, let it navigate.
+                    // For now, let's assume it's for a potential full page.
+                  }}
+                >
+                  查看完整页面
+                </Link>
+                <button
+                  onClick={() => setSelectedBook(null)}
+                  className="kawaii-button"
+                >
+                  关闭
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
