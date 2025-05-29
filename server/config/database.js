@@ -18,7 +18,8 @@ const connectDB = async () => {
       // 其他优化
       retryWrites: true,
       w: 'majority',
-      readPreference: 'primaryPreferred', // 优先读主节点
+      // 允许通过环境变量控制读取偏好，便于使用多区域副本
+      readPreference: process.env.MONGODB_READ_PREFERENCE || 'primaryPreferred',
       compressors: ['zlib'], // 启用压缩
     });
 

@@ -47,8 +47,11 @@ app.use((req, res, next) => {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Static files
-app.use('/uploads', express.static('uploads'));
+// Static files - 缓存上传内容以加速跨国访问
+app.use('/uploads', express.static('uploads', {
+  maxAge: '7d',
+  immutable: true
+}));
 
 // Health check (before database check)
 app.get('/api/health', (req, res) => {
