@@ -55,7 +55,7 @@ const bookRecommendationSchema = new mongoose.Schema({
   review: {
     type: String,
     required: [true, 'Review is required'],
-    minlength: [10, 'Review must be at least 10 characters'],
+    minlength: [1, 'Review is required'],
     maxlength: [2000, 'Review cannot exceed 2000 characters']
   },
   tags: [{

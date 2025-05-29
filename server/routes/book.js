@@ -98,7 +98,7 @@ router.get('/search', async (req, res) => {
               isbn: volumeInfo.industryIdentifiers?.find(id => 
                 id.type === 'ISBN_13' || id.type === 'ISBN_10'
               )?.identifier || '',
-              coverImage: imageLinks.thumbnail || imageLinks.smallThumbnail || '',
+              coverImage: (imageLinks.thumbnail || imageLinks.smallThumbnail || '').replace('http://', 'https://'),
               googleBooksId: item.id
             };
           });
@@ -196,7 +196,7 @@ router.get('/details/:googleBooksId', async (req, res) => {
       isbn: volumeInfo.industryIdentifiers?.find(id => 
         id.type === 'ISBN_13' || id.type === 'ISBN_10'
       )?.identifier || '',
-      coverImage: imageLinks.large || imageLinks.medium || imageLinks.thumbnail || imageLinks.smallThumbnail || '',
+      coverImage: (imageLinks.large || imageLinks.medium || imageLinks.thumbnail || imageLinks.smallThumbnail || '').replace('http://', 'https://'),
       googleBooksId: item.id,
       previewLink: volumeInfo.previewLink || '',
       infoLink: volumeInfo.infoLink || ''
@@ -340,8 +340,8 @@ router.post('/', auth, [
     .isFloat({ min: 1, max: 10 })
     .withMessage('Rating must be between 1 and 10'),
   body('review')
-    .isLength({ min: 10, max: 2000 })
-    .withMessage('Review must be between 10 and 2000 characters'),
+    .isLength({ min: 1, max: 2000 })
+    .withMessage('Review is required and must be under 2000 characters'),
   body('recommendation')
     .isIn(['highly-recommend', 'recommend', 'neutral', 'not-recommend'])
     .withMessage('Invalid recommendation value'),
