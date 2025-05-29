@@ -13,7 +13,7 @@ const proxyRoutes = require('./routes/proxy');
 const evaluationRoutes = require('./routes/evaluation');
 const notionRoutes = require('./routes/notion');
 const bookRoutes = require('./routes/book');
-const { advancedCacheSystem } = require('./middleware/advancedCache');
+// const { advancedCacheSystem } = require('./middleware/advancedCache');
 const compression = require('compression');
 
 const app = express();
@@ -77,7 +77,6 @@ app.use('/uploads', express.static('uploads', {
 app.get('/api/health', (req, res) => {
   const dbState = mongoose.connection.readyState;
   const dbStatus = dbState === 1 ? 'connected' : dbState === 2 ? 'connecting' : 'disconnected';
-  const cacheStats = advancedCacheSystem.getStats();
   
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.json({ 
@@ -85,12 +84,6 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     database: dbStatus,
     env: process.env.NODE_ENV,
-    cache: {
-      hot: cacheStats.hot,
-      warm: cacheStats.warm,
-      cold: cacheStats.cold,
-      hitRate: cacheStats.overallHitRate
-    },
     performance: {
       uptime: process.uptime(),
       memory: process.memoryUsage(),

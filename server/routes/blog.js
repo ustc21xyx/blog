@@ -5,7 +5,6 @@ const { auth, optionalAuth } = require('../middleware/auth');
 const User = require('../models/User');
 const rateLimit = require('express-rate-limit');
 const { cacheMiddleware, clearCache } = require('../middleware/cache');
-const { advancedCacheSystem, createAdvancedCacheMiddleware } = require('../middleware/advancedCache');
 
 const router = express.Router();
 
@@ -45,7 +44,7 @@ const setCache = (key, data) => {
 };
 
 // Get all published blog posts (with pagination)
-router.get('/', optionalAuth, createAdvancedCacheMiddleware('hot', 600), async (req, res) => {
+router.get('/', optionalAuth, cacheMiddleware(300), async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -385,7 +384,7 @@ router.post('/:id/comments', auth, [
 });
 
 // Get user's blog posts
-router.get('/user/:username', optionalAuth, createAdvancedCacheMiddleware('warm', 300), async (req, res) => {
+router.get('/user/:username', optionalAuth, cacheMiddleware(180), async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;

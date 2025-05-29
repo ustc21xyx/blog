@@ -220,10 +220,20 @@ const staticDataCache = createCacheMiddleware({
   }
 });
 
+// 创建高级缓存中间件的便捷函数
+const createAdvancedCacheMiddleware = (priority = 'warm', ttl = null) => {
+  return createCacheMiddleware({
+    keyGenerator: (req) => `${priority}_${req.method}_${req.originalUrl}`,
+    priority,
+    ttl
+  });
+};
+
 module.exports = {
   AdvancedCacheSystem,
-  globalCache,
+  advancedCacheSystem: globalCache,
   createCacheMiddleware,
+  createAdvancedCacheMiddleware,
   hotDataCache,
   userDataCache,
   staticDataCache
