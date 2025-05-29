@@ -355,8 +355,11 @@ router.post('/', auth, [
     .withMessage('Invalid reading status value')
 ], async (req, res) => {
   try {
+    console.log('Creating book recommendation with data:', JSON.stringify(req.body, null, 2));
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({ 
         message: 'Validation failed', 
         errors: errors.array() 
@@ -415,7 +418,25 @@ router.post('/', auth, [
     });
   } catch (error) {
     console.error('Create book recommendation error:', error);
-    res.status(500).json({ message: 'Server error' });
+    
+    // Handle Mongoose validation errors
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => ({
+        field: err.path,
+        message: err.message
+      }));
+      return res.status(400).json({ 
+        message: 'Validation failed', 
+        errors: validationErrors,
+        details: error.message
+      });
+    }
+    
+    // Handle other errors
+    res.status(500).json({ 
+      message: 'Server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
   }
 });
 
