@@ -303,7 +303,7 @@ const BookRecommendationsPage = () => {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {books.map((book, index) => (
               <motion.article
                 key={book._id}
@@ -313,11 +313,11 @@ const BookRecommendationsPage = () => {
                 className="kawaii-card overflow-hidden hover:shadow-glow-pink transition-all duration-300 transform hover:-translate-y-1 anime-sparkle"
               >
                 {book.coverImage && (
-                  <div className="aspect-[3/4] bg-gradient-kawaii">
+                  <div className="h-40 bg-gradient-kawaii">
                     <img
                       src={book.coverImage}
                       alt={book.title}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover rounded-t-lg"
                     />
                   </div>
                 )}
