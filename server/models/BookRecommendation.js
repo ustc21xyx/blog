@@ -42,10 +42,6 @@ const bookRecommendationSchema = new mongoose.Schema({
     type: String,
     trim: true
   }],
-  language: {
-    type: String,
-    default: 'zh'
-  },
   rating: {
     type: Number,
     min: 1,

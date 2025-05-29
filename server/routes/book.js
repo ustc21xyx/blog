@@ -107,8 +107,7 @@ router.get('/search', async (req, res) => {
               publishedDate: volumeInfo.publishedDate || '',
               pageCount: volumeInfo.pageCount || 0,
               categories: volumeInfo.categories || [],
-              language: normalizeLanguage(volumeInfo.language),
-              isbn: volumeInfo.industryIdentifiers?.find(id => 
+              isbn: volumeInfo.industryIdentifiers?.find(id =>
                 id.type === 'ISBN_13' || id.type === 'ISBN_10'
               )?.identifier || '',
               coverImage: (imageLinks.thumbnail || imageLinks.smallThumbnail || '').replace('http://', 'https://'),
@@ -205,8 +204,7 @@ router.get('/details/:googleBooksId', async (req, res) => {
       publisher: volumeInfo.publisher || '',
       pageCount: volumeInfo.pageCount || 0,
       categories: volumeInfo.categories || [],
-      language: normalizeLanguage(volumeInfo.language),
-      isbn: volumeInfo.industryIdentifiers?.find(id => 
+      isbn: volumeInfo.industryIdentifiers?.find(id =>
         id.type === 'ISBN_13' || id.type === 'ISBN_10'
       )?.identifier || '',
       coverImage: (imageLinks.large || imageLinks.medium || imageLinks.thumbnail || imageLinks.smallThumbnail || '').replace('http://', 'https://'),
@@ -389,7 +387,6 @@ router.post('/', auth, [
       publishedDate,
       pageCount,
       categories,
-      language,
       rating,
       review,
       tags,
@@ -418,12 +415,7 @@ router.post('/', auth, [
       recommendation,
       isPublished: isPublished || false
     };
-
-    // 暂时不设置language字段，避免MongoDB文本索引语言问题
-    // if (language) {
-    //   bookData.language = normalizeLanguage(language);
-    // }
-
+ 
     const book = new BookRecommendation(bookData);
 
     await book.save();
