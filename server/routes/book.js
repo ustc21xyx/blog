@@ -4,6 +4,7 @@ const BookRecommendation = require('../models/BookRecommendation');
 const { auth, optionalAuth } = require('../middleware/auth');
 const User = require('../models/User');
 const { cacheMiddleware, clearCache } = require('../middleware/cache');
+const { advancedCacheSystem, createAdvancedCacheMiddleware } = require('../middleware/advancedCache');
 const axios = require('axios');
 
 const router = express.Router();
@@ -225,7 +226,7 @@ router.get('/details/:googleBooksId', async (req, res) => {
 });
 
 // 获取所有书籍推荐 (分页)
-router.get('/', optionalAuth, cacheMiddleware(300), async (req, res) => {
+router.get('/', optionalAuth, createAdvancedCacheMiddleware('hot', 600), async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 12;
@@ -275,11 +276,13 @@ router.get('/', optionalAuth, cacheMiddleware(300), async (req, res) => {
     }
 
     const books = await BookRecommendation.find(filter)
-      .populate('recommendedBy', 'username displayName avatar')
+      .populate('recommendedBy', 'username displayName avatar', null, { lean: true })
       .sort(sortOptions)
       .skip(skip)
       .limit(limit)
-      .lean();
+      .select('-comments -review') // 排除大字段
+      .lean({ virtuals: false })
+      .hint({ isPublished: 1, publishedAt: -1 });
 
     const total = await BookRecommendation.countDocuments(filter);
 
@@ -596,7 +599,7 @@ router.post('/:id/comments', auth, [
 });
 
 // 获取用户的书籍推荐
-router.get('/user/:username', optionalAuth, cacheMiddleware(180), async (req, res) => {
+router.get('/user/:username', optionalAuth, createAdvancedCacheMiddleware('warm', 300), async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -617,11 +620,13 @@ router.get('/user/:username', optionalAuth, cacheMiddleware(180), async (req, re
     }
 
     const books = await BookRecommendation.find(filter)
-      .populate('recommendedBy', 'username displayName avatar')
+      .populate('recommendedBy', 'username displayName avatar', null, { lean: true })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .lean();
+      .select('-comments -review')
+      .lean({ virtuals: false })
+      .hint({ recommendedBy: 1, createdAt: -1 });
 
     const total = await BookRecommendation.countDocuments(filter);
 

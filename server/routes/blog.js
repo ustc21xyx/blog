@@ -5,6 +5,7 @@ const { auth, optionalAuth } = require('../middleware/auth');
 const User = require('../models/User');
 const rateLimit = require('express-rate-limit');
 const { cacheMiddleware, clearCache } = require('../middleware/cache');
+const { advancedCacheSystem, createAdvancedCacheMiddleware } = require('../middleware/advancedCache');
 
 const router = express.Router();
 
@@ -44,7 +45,7 @@ const setCache = (key, data) => {
 };
 
 // Get all published blog posts (with pagination)
-router.get('/', optionalAuth, cacheMiddleware(300), async (req, res) => {
+router.get('/', optionalAuth, createAdvancedCacheMiddleware('hot', 600), async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -76,12 +77,13 @@ router.get('/', optionalAuth, cacheMiddleware(300), async (req, res) => {
 
     // 优化查询 - 只选择必要字段，使用lean()提高性能
     const posts = await BlogPost.find(filter)
-      .populate('author', 'username displayName avatar')
+      .populate('author', 'username displayName avatar', null, { lean: true })
       .sort({ publishedAt: -1 })
       .skip(skip)
       .limit(limit)
-      .select('-content') // 排除content字段减少数据传输
-      .lean(); // 返回普通JS对象，提高性能
+      .select('-content -comments') // 排除大字段减少数据传输
+      .lean({ virtuals: false }) // 返回普通JS对象，禁用virtuals提高性能
+      .hint({ isPublished: 1, publishedAt: -1 }); // 使用索引提示
 
     const total = await BlogPost.countDocuments(filter);
 
@@ -383,7 +385,7 @@ router.post('/:id/comments', auth, [
 });
 
 // Get user's blog posts
-router.get('/user/:username', optionalAuth, cacheMiddleware(180), async (req, res) => {
+router.get('/user/:username', optionalAuth, createAdvancedCacheMiddleware('warm', 300), async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
@@ -416,12 +418,13 @@ router.get('/user/:username', optionalAuth, cacheMiddleware(180), async (req, re
 
     // 优化查询
     const posts = await BlogPost.find(filter)
-      .populate('author', 'username displayName avatar')
+      .populate('author', 'username displayName avatar', null, { lean: true })
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .select('-content')
-      .lean();
+      .select('-content -comments')
+      .lean({ virtuals: false })
+      .hint({ author: 1, createdAt: -1 });
 
     const total = await BlogPost.countDocuments(filter);
 

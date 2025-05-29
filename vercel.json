@@ -14,7 +14,8 @@
           "server/uploads/**",
           "server/node_modules/**"
         ],
-        "maxDuration": 30
+        "maxDuration": 30,
+        "memory": 1024
       }
     },
     {
@@ -31,5 +32,74 @@
     { "source": "/uploads/(.*)", "destination": "server/app.js" },
     { "source": "/((?!api/|uploads/|.*\\.(?:css|js|png|jpg|jpeg|gif|svg|ico|json|txt|map|webmanifest)$).*)", "destination": "/index.html" }
   ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, s-maxage=600, stale-while-revalidate=86400"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    },
+    {
+      "source": "/(.*\\.(js|css|ico|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot))",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    },
+    {
+      "source": "/uploads/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=2592000, s-maxage=31536000"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    },
+    {
+      "source": "/(.*\\.html)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, s-maxage=86400, must-revalidate"
+        }
+      ]
+    }
+  ],
+  "functions": {
+    "server/app.js": {
+      "maxDuration": 30,
+      "memory": 1024
+    }
+  },
+  "regions": ["hkg1", "sin1", "nrt1", "icn1"],
   "installCommand": "npm install && cd server && npm install && cd ../client && npm install"
 }
