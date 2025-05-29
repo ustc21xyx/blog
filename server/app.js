@@ -12,6 +12,7 @@ const characterRoutes = require('./routes/character');
 const proxyRoutes = require('./routes/proxy');
 const evaluationRoutes = require('./routes/evaluation');
 const notionRoutes = require('./routes/notion');
+const bookRoutes = require('./routes/book');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -162,6 +163,7 @@ app.use('/api/character', characterRoutes);
 app.use('/api/proxy', proxyRoutes);
 app.use('/api/evaluation', evaluationRoutes);
 app.use('/api/notion', notionRoutes);
+app.use('/api/book', bookRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

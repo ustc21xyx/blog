@@ -25,6 +25,8 @@ import NotionIntegrationPage from './pages/NotionIntegrationPage';
 import NotionCallbackPage from './pages/NotionCallbackPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfUsePage from './pages/TermsOfUsePage';
+import BookRecommendationsPage from './pages/BookRecommendationsPage';
+import CreateBookRecommendationPage from './pages/CreateBookRecommendationPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -51,6 +53,7 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/blog" element={<BlogListPage />} />
             <Route path="/blog/:slug" element={<BlogPostPage />} />
+            <Route path="/books" element={<BookRecommendationsPage />} />
             <Route path="/user/:username" element={<ProfilePage />} />
             <Route path="/profile/:username" element={<ProfilePage />} />
             
@@ -84,6 +87,22 @@ function App() {
               element={
                 <ProtectedRoute>
                   <CreatePostPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/book/create"
+              element={
+                <ProtectedRoute>
+                  <CreateBookRecommendationPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/book/edit/:id"
+              element={
+                <ProtectedRoute>
+                  <CreateBookRecommendationPage />
                 </ProtectedRoute>
               }
             />

@@ -224,3 +224,94 @@ export interface LeaderboardEntry {
   }[];
   totalScore: number;
 }
+
+// ========== 书籍推荐系统类型定义 ==========
+
+export interface BookSearchResult {
+  id: string;
+  title: string;
+  authors: string[];
+  author: string;
+  description: string;
+  publishedDate: string;
+  pageCount: number;
+  categories: string[];
+  language: string;
+  isbn: string;
+  coverImage: string;
+  googleBooksId: string;
+}
+
+export interface BookRecommendation {
+  _id: string;
+  title: string;
+  author: string;
+  isbn?: string;
+  googleBooksId?: string;
+  coverImage?: string;
+  description?: string;
+  publishedDate?: string;
+  pageCount?: number;
+  categories: string[];
+  language: string;
+  rating: number;
+  review: string;
+  tags: string[];
+  recommendedBy: User;
+  likes: string[];
+  comments: BookComment[];
+  readingStatus: 'want-to-read' | 'reading' | 'finished' | 'abandoned';
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  recommendation: 'highly-recommend' | 'recommend' | 'neutral' | 'not-recommend';
+  isPublished: boolean;
+  publishedAt?: string;
+  views: number;
+  createdAt: string;
+  updatedAt: string;
+  likeCount: number;
+  commentCount: number;
+  hasLiked?: boolean;
+}
+
+export interface BookComment {
+  _id: string;
+  author: User;
+  content: string;
+  createdAt: string;
+}
+
+export interface CreateBookRecommendationForm {
+  title: string;
+  author: string;
+  isbn?: string;
+  googleBooksId?: string;
+  coverImage?: string;
+  description?: string;
+  publishedDate?: string;
+  pageCount?: number;
+  categories?: string[];
+  language?: string;
+  rating: number;
+  review: string;
+  tags?: string[];
+  readingStatus?: 'want-to-read' | 'reading' | 'finished' | 'abandoned';
+  difficulty?: 'beginner' | 'intermediate' | 'advanced';
+  recommendation: 'highly-recommend' | 'recommend' | 'neutral' | 'not-recommend';
+  isPublished?: boolean;
+}
+
+export interface BookSearchParams {
+  q: string;
+  maxResults?: number;
+  startIndex?: number;
+}
+
+export interface BookRecommendationParams {
+  page?: number;
+  limit?: number;
+  category?: string;
+  search?: string;
+  difficulty?: string;
+  recommendation?: string;
+  sortBy?: 'publishedAt' | 'rating' | 'views' | 'likes';
+}
