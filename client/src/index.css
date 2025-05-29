@@ -347,6 +347,48 @@
     }
   }
 
+  /* 书籍卡片悬浮动画 */
+  .book-card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .book-card-hover:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(160, 113, 255, 0.3);
+  }
+
+  /* 模态框背景模糊 */
+  .modal-backdrop {
+    backdrop-filter: blur(12px);
+    background: rgba(0, 0, 0, 0.6);
+  }
+
+  /* 渐变边框动画 */
+  .border-gradient-kawaii {
+    border: 2px solid transparent;
+    background: linear-gradient(white, white) padding-box,
+                linear-gradient(135deg, #ff9a9e, #fecfef, #a071ff) border-box;
+  }
+
+  .dark .border-gradient-kawaii {
+    background: linear-gradient(#1a1a2e, #1a1a2e) padding-box,
+                linear-gradient(135deg, #ff9a9e, #fecfef, #a071ff) border-box;
+  }
+
+  /* 脉冲光效 */
+  .pulse-glow {
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+
+  @keyframes pulseGlow {
+    0%, 100% {
+      box-shadow: 0 0 5px rgba(160, 113, 255, 0.3);
+    }
+    50% {
+      box-shadow: 0 0 20px rgba(160, 113, 255, 0.6), 0 0 30px rgba(244, 63, 94, 0.3);
+    }
+  }
+
   .pulse-ring {
     position: relative;
   }

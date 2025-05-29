@@ -363,115 +363,81 @@ const BookRecommendationsPage = () => {
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
             {books.map((book, index) => (
               <motion.article
                 key={book._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="kawaii-card overflow-hidden hover:shadow-glow-pink transition-all duration-300 transform hover:-translate-y-1 anime-sparkle"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ 
+                  y: -8, 
+                  scale: 1.02,
+                  boxShadow: "0 20px 40px rgba(160, 113, 255, 0.3)"
+                }}
+                transition={{ 
+                  duration: 0.3, 
+                  delay: index * 0.05,
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 20
+                }}
+                className="kawaii-card overflow-hidden cursor-pointer anime-sparkle group"
+                onClick={() => setSelectedBook(book)}
               >
-                {book.coverImage && (
-                  <div className="h-40 bg-gradient-kawaii">
+                {book.coverImage ? (
+                  <div className="aspect-[3/4] bg-gradient-kawaii relative overflow-hidden">
                     <img
                       src={book.coverImage}
                       alt={book.title}
-                      className="w-full h-full object-cover rounded-t-lg"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                      loading="lazy"
                     />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  </div>
+                ) : (
+                  <div className="aspect-[3/4] bg-gradient-kawaii flex items-center justify-center">
+                    <Book className="w-12 h-12 text-white/80" />
                   </div>
                 )}
 
-                <div className="p-4">
+                <div className="p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getRecommendationColor(book.recommendation)}`}>
+                    <div className="flex items-center text-anime-yellow-500">
+                      <Star className="w-3 h-3 fill-current" />
+                      <span className="text-xs font-medium ml-1">{book.rating}</span>
+                    </div>
+                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium ${getRecommendationColor(book.recommendation)}`}>
                       {getRecommendationLabel(book.recommendation)}
                     </span>
-                    <div className="flex items-center text-anime-yellow-500">
-                      <Star className="w-4 h-4 fill-current" />
-                      <span className="text-sm font-medium ml-1">{book.rating}</span>
-                    </div>
                   </div>
 
-                  <h3
-                    className="text-lg font-heading font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2 cursor-pointer hover:text-anime-purple-600 transition-colors duration-200"
-                    onClick={() => setSelectedBook(book)}
-                  >
+                  <h3 className="text-sm font-heading font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2 group-hover:text-anime-purple-600 transition-colors duration-200">
                     {book.title}
                   </h3>
  
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                    作者: {book.author}
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 line-clamp-1">
+                    {book.author}
                   </p>
 
-                  {book.categories.length > 0 && (
-                    <div className="flex flex-wrap mb-3">
-                      {book.categories.slice(0, 2).map((category) => (
-                        <span key={category} className="tag text-xs mr-1 mb-1">
-                          {category}
-                        </span>
-                      ))}
-                      {book.categories.length > 2 && (
-                        <span className="tag text-xs">+{book.categories.length - 2}</span>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between mb-3">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getReadingTypeColor(book.difficulty)}`}>
-                      {getReadingTypeLabel(book.difficulty)}
-                    </span>
-                    <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                      <Calendar className="w-3 h-3 mr-1" />
-                      {format(new Date(book.publishedAt || book.createdAt), 'MM/dd')}
-                    </div>
-                  </div>
-
-                  <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2">
-                    {book.review}
-                  </p>
-
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                     <div className="flex items-center space-x-2">
-                      <div className="w-6 h-6 rounded-full bg-gradient-kawaii flex items-center justify-center">
-                        {book.recommendedBy.avatar ? (
-                          <img
-                            src={book.recommendedBy.avatar}
-                            alt={book.recommendedBy.displayName}
-                            className="w-6 h-6 rounded-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-white text-xs font-medium">
-                            {book.recommendedBy.displayName[0]?.toUpperCase()}
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-xs text-gray-600 dark:text-gray-400 truncate">
-                        {book.recommendedBy.displayName}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center space-x-3 text-xs text-gray-500 dark:text-gray-400">
-                      <div className="flex items-center space-x-1">
-                        <Eye className="w-3 h-3" />
-                        <span>{book.views}</span>
-                      </div>
                       <button
                         onClick={(e) => handleLikeOnCard(book._id, e)}
-                        className={`flex items-center space-x-1 transition-colors duration-200 ${
+                        className={`flex items-center space-x-1 transition-colors duration-200 hover:scale-110 ${
                           book.hasLiked ? 'text-red-500' : 'hover:text-red-500'
                         }`}
                       >
                         <Heart className={`w-3 h-3 ${book.hasLiked ? 'fill-current' : ''}`} />
                         <span>{book.likeCount}</span>
                       </button>
-                      <div
-                        className="flex items-center space-x-1 cursor-pointer hover:text-anime-purple-500"
-                        onClick={(e) => { e.stopPropagation(); setSelectedBook(book);}}
-                      >
+                      <div className="flex items-center space-x-1">
                         <MessageCircle className="w-3 h-3" />
                         <span>{book.commentCount}</span>
                       </div>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <Eye className="w-3 h-3" />
+                      <span>{book.views}</span>
                     </div>
                   </div>
                 </div>
@@ -525,51 +491,76 @@ const BookRecommendationsPage = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-            onClick={() => setSelectedBook(null)} // Close on backdrop click
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-lg flex items-center justify-center p-4 z-50"
+            onClick={() => setSelectedBook(null)}
           >
             <motion.div
-              initial={{ scale: 0.7, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.7, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="bg-white dark:bg-dark-card rounded-xl shadow-2xl p-6 md:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto relative"
-              onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal
+              initial={{ scale: 0.8, opacity: 0, y: 50 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.8, opacity: 0, y: 50 }}
+              transition={{ 
+                type: "spring", 
+                stiffness: 400, 
+                damping: 25,
+                duration: 0.3
+              }}
+              className="kawaii-card shadow-glow-purple p-6 md:p-8 max-w-4xl w-full max-h-[95vh] overflow-y-auto relative anime-scrollbar"
+              onClick={(e) => e.stopPropagation()}
             >
               <button
                 onClick={() => setSelectedBook(null)}
-                className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors"
+                className="absolute top-4 right-4 kawaii-card p-2 rounded-kawaii text-gray-500 hover:text-white hover:bg-gradient-kawaii transition-all duration-300 transform hover:scale-110"
               >
-                <X size={24} />
+                <X size={20} />
               </button>
               
-              <div className="md:flex md:space-x-6">
+              <div className="lg:flex lg:space-x-8">
                 {selectedBook.coverImage && (
-                  <div className="md:w-1/3 mb-4 md:mb-0 flex-shrink-0">
-                    <img
-                      src={selectedBook.coverImage}
-                      alt={selectedBook.title}
-                      className="w-full h-auto object-contain rounded-lg shadow-md"
-                    />
+                  <div className="lg:w-1/3 mb-6 lg:mb-0 flex-shrink-0">
+                    <div className="relative group">
+                      <img
+                        src={selectedBook.coverImage}
+                        alt={selectedBook.title}
+                        className="w-full h-auto object-contain rounded-kawaii shadow-anime-lg transition-transform duration-300 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-anime-purple-600/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-kawaii" />
+                    </div>
                   </div>
                 )}
-                <div className="md:w-2/3">
-                  <h2 className="text-2xl md:text-3xl font-heading font-bold text-gray-900 dark:text-white mb-2">
+                <div className="lg:w-2/3">
+                  <h2 className="text-2xl md:text-4xl font-heading font-bold anime-gradient-text mb-3">
                     {selectedBook.title}
                   </h2>
-                  <p className="text-lg text-gray-700 dark:text-gray-300 mb-3">
-                    作者: {selectedBook.author}
+                  <p className="text-lg text-gray-700 dark:text-gray-300 mb-4">
+                    作者: <span className="font-semibold text-anime-purple-600 dark:text-anime-purple-400">{selectedBook.author}</span>
                   </p>
-                  <div className="flex items-center space-x-2 mb-3">
-                    <Star className="w-5 h-5 text-anime-yellow-500 fill-current" />
-                    <span className="text-xl font-semibold text-gray-800 dark:text-gray-200">{selectedBook.rating}/10</span>
+                  <div className="flex items-center space-x-6 mb-4">
+                    <div className="flex items-center space-x-2">
+                      <Star className="w-6 h-6 text-anime-yellow-500 fill-current" />
+                      <span className="text-2xl font-bold text-gray-800 dark:text-gray-200">{selectedBook.rating}</span>
+                      <span className="text-gray-500">/10</span>
+                    </div>
+                    <button
+                      onClick={(e) => handleLikeOnCard(selectedBook._id, e)}
+                      className={`flex items-center space-x-2 px-4 py-2 rounded-kawaii transition-all duration-300 transform hover:scale-105 ${
+                        selectedBook.hasLiked 
+                          ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' 
+                          : 'kawaii-card hover:shadow-glow-pink'
+                      }`}
+                    >
+                      <Heart className={`w-5 h-5 transition-all duration-300 ${selectedBook.hasLiked ? 'fill-current text-red-500' : 'hover:text-red-500'}`} />
+                      <span className="font-medium">{selectedBook.likeCount}</span>
+                    </button>
                   </div>
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold mb-3 ${getRecommendationColor(selectedBook.recommendation)}`}>
-                    {getRecommendationLabel(selectedBook.recommendation)}
-                  </span>
-                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ml-2 mb-3 ${getReadingTypeColor(selectedBook.difficulty)}`}>
-                    {getReadingTypeLabel(selectedBook.difficulty)}
-                  </span>
+                  <div className="flex flex-wrap gap-3 mb-4">
+                    <span className={`inline-flex items-center px-4 py-2 rounded-kawaii text-sm font-semibold ${getRecommendationColor(selectedBook.recommendation)}`}>
+                      {getRecommendationLabel(selectedBook.recommendation)}
+                    </span>
+                    <span className={`inline-flex items-center px-4 py-2 rounded-kawaii text-sm font-semibold ${getReadingTypeColor(selectedBook.difficulty)}`}>
+                      {getReadingTypeLabel(selectedBook.difficulty)}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -582,11 +573,16 @@ const BookRecommendationsPage = () => {
                 </div>
               )}
 
-              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-dark-border">
-                <h3 className="text-xl font-heading font-semibold text-gray-800 dark:text-white mb-2">评价</h3>
-                <p className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap text-sm leading-relaxed">
-                  {selectedBook.review}
-                </p>
+              <div className="mt-8 pt-6 border-t-2 border-gradient-kawaii">
+                <h3 className="text-2xl font-heading font-bold anime-gradient-text mb-4 flex items-center">
+                  <Sparkles className="w-6 h-6 mr-2" />
+                  评价
+                </h3>
+                <div className="kawaii-card p-6 bg-gradient-to-br from-anime-purple-50 to-anime-pink-50 dark:from-anime-purple-900/20 dark:to-anime-pink-900/20">
+                  <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap leading-relaxed">
+                    {selectedBook.review}
+                  </p>
+                </div>
               </div>
               
               {selectedBook.tags && selectedBook.tags.length > 0 && (
@@ -600,11 +596,36 @@ const BookRecommendationsPage = () => {
                 </div>
               )}
 
-              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-dark-border text-sm text-gray-500 dark:text-gray-400">
-                <p>推荐人: {selectedBook.recommendedBy.displayName}</p>
-                <p>发布日期: {format(new Date(selectedBook.publishedAt || selectedBook.createdAt), 'yyyy年MM月dd日')}</p>
-                {selectedBook.isbn && <p>ISBN: {selectedBook.isbn}</p>}
-                {selectedBook.pageCount && <p>页数: {selectedBook.pageCount}</p>}
+              <div className="mt-8 pt-6 border-t border-gray-200 dark:border-dark-border">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="kawaii-card p-4">
+                    <div className="flex items-center space-x-3 mb-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-kawaii flex items-center justify-center">
+                        {selectedBook.recommendedBy.avatar ? (
+                          <img
+                            src={selectedBook.recommendedBy.avatar}
+                            alt={selectedBook.recommendedBy.displayName}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-white font-medium">
+                            {selectedBook.recommendedBy.displayName[0]?.toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-800 dark:text-white">推荐人</p>
+                        <p className="text-gray-600 dark:text-gray-400">{selectedBook.recommendedBy.displayName}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="kawaii-card p-4 space-y-2">
+                    <p className="flex justify-between"><span className="text-gray-600 dark:text-gray-400">发布日期:</span> <span className="font-medium">{format(new Date(selectedBook.publishedAt || selectedBook.createdAt), 'yyyy年MM月dd日')}</span></p>
+                    {selectedBook.isbn && <p className="flex justify-between"><span className="text-gray-600 dark:text-gray-400">ISBN:</span> <span className="font-mono text-xs">{selectedBook.isbn}</span></p>}
+                    {selectedBook.pageCount && <p className="flex justify-between"><span className="text-gray-600 dark:text-gray-400">页数:</span> <span className="font-medium">{selectedBook.pageCount}</span></p>}
+                    <p className="flex justify-between"><span className="text-gray-600 dark:text-gray-400">浏览量:</span> <span className="font-medium">{selectedBook.views}</span></p>
+                  </div>
+                </div>
               </div>
               
               {/* Comments Section in Modal */}
@@ -658,10 +679,10 @@ const BookRecommendationsPage = () => {
                 </div>
               </div>
 
-              <div className="mt-8 flex justify-end">
+              <div className="mt-8 flex justify-center">
                 <button
                   onClick={() => setSelectedBook(null)}
-                  className="kawaii-button"
+                  className="kawaii-button px-8 py-3 transform hover:scale-105 transition-all duration-300"
                 >
                   关闭
                 </button>
