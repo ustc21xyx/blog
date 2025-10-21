@@ -15,6 +15,12 @@ const notionRoutes = require('./routes/notion');
 const bookRoutes = require('./routes/book');
 // const { advancedCacheSystem } = require('./middleware/advancedCache');
 const compression = require('compression');
+const {
+  getMongoConfig,
+  getConnectionOptions,
+  withSrvFallback,
+  maskMongoUriCredentials
+} = require('./utils/mongoConnection');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -113,61 +119,64 @@ app.get('/api/debug', (req, res) => {
 
 // Database connection with better serverless handling
 let isConnected = false;
+let connectPromise = null;
 
 const connectDB = async () => {
-  if (isConnected && mongoose.connection.readyState === 1) {
-    return;
+  if (mongoose.connection.readyState === 1) {
+    isConnected = true;
+    return mongoose.connection;
   }
-  
-  try {
-    let mongoURI = process.env.MONGODB_URI || 
-                   process.env.MONGO_URI || 
-                   process.env.DATABASE_URL ||
-                   process.env.MONGODB_URL;
-    
-    console.log('[DB] Environment check:');
-    console.log('[DB] MONGODB_URI exists:', !!process.env.MONGODB_URI);
-    console.log('[DB] NODE_ENV:', process.env.NODE_ENV);
-    
-    if (mongoURI) {
-      if (mongoURI.includes('mongodb.net') && !mongoURI.includes('/anime-blog')) {
-        mongoURI = mongoURI.replace('/?', '/anime-blog?');
-      }
-      console.log('[DB] Using cloud MongoDB Atlas');
+
+  if (mongoose.connection.readyState === 2) {
+    if (connectPromise) {
+      await connectPromise;
+    } else if (typeof mongoose.connection.asPromise === 'function') {
+      await mongoose.connection.asPromise();
     } else {
-      mongoURI = 'mongodb://localhost:27017/anime-blog';
-      console.log('[DB] Using local MongoDB fallback');
-    }
-    
-    console.log('[DB] Attempting connection...');
-    
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(mongoURI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-        serverSelectionTimeoutMS: 8000,
-        connectTimeoutMS: 10000,
-        socketTimeoutMS: 45000,
-        maxPoolSize: 10,
-        minPoolSize: 1,
-        maxIdleTimeMS: 30000,
-        retryWrites: true,
-        retryReads: true,
-        readPreference: 'secondaryPreferred',
-        readConcern: { level: 'majority' },
-        writeConcern: { w: 'majority', j: true, wtimeout: 10000 },
-        compressors: ['zlib'],
-        zlibCompressionLevel: 6
+      await new Promise((resolve, reject) => {
+        mongoose.connection.once('connected', resolve);
+        mongoose.connection.once('error', reject);
       });
     }
-    
+    return mongoose.connection;
+  }
+
+  if (mongoose.connection.readyState === 3) {
+    await mongoose.disconnect();
+  }
+
+  const { uri: mongoURI, source, isAtlas, isSrv } = getMongoConfig();
+
+  console.log('[DB] Environment check:');
+  console.log('[DB] MONGODB_URI exists:', !!process.env.MONGODB_URI);
+  console.log('[DB] NODE_ENV:', process.env.NODE_ENV);
+  console.log(isAtlas ? '[DB] Using cloud MongoDB Atlas' : '[DB] Using local MongoDB fallback');
+  console.log(`[DB] Connection string source: ${source}`);
+  console.log('[DB] Attempting connection...');
+  console.log(`[DB] Connection URI: ${maskMongoUriCredentials(mongoURI)}`);
+  if (isSrv) {
+    console.log('[DB] Connection URI uses SRV record lookup');
+  }
+
+  connectPromise = withSrvFallback(
+    (uri, options) => mongoose.connect(uri, options),
+    mongoURI,
+    getConnectionOptions({ bufferCommands: false })
+  );
+
+  try {
+    await connectPromise;
     isConnected = true;
     console.log('🎌 MongoDB connected successfully');
-    
   } catch (err) {
-    console.error('❌ Database connection failed:', err.message);
     isConnected = false;
+    console.error('❌ Database connection failed:', err.message);
+    throw err;
+  } finally {
+    connectPromise = null;
   }
+
+  return mongoose.connection;
 };
 
 // Handle MongoDB connection events
@@ -190,7 +199,15 @@ mongoose.connection.on('disconnected', () => {
 app.use('/api', async (req, res, next) => {
   if (!isConnected || mongoose.connection.readyState !== 1) {
     console.log('[API] Attempting to connect to database...');
-    await connectDB();
+    try {
+      await connectDB();
+    } catch (err) {
+      console.error('[API] Database connection error:', err.message);
+      return res.status(503).json({
+        message: 'Database connection error',
+        error: process.env.NODE_ENV === 'development' ? err.message : 'Service temporarily unavailable'
+      });
+    }
   }
   next();
 });
@@ -220,7 +237,9 @@ app.use('*', (req, res) => {
 });
 
 // Initialize database connection
-connectDB();
+connectDB().catch((err) => {
+  console.error('Initial MongoDB connection error:', err.message);
+});
 
 // Start server in development
 if (process.env.NODE_ENV !== 'production' || require.main === module) {
