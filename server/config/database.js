@@ -1,45 +1,61 @@
 const mongoose = require('mongoose');
+const {
+  getMongoConfig,
+  getConnectionOptions,
+  withSrvFallback,
+  maskMongoUriCredentials
+} = require('../utils/mongoConnection');
 
-const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      // 连接池优化
-      maxPoolSize: 10, // 最大连接数
-      minPoolSize: 2,  // 最小连接数
-      maxIdleTimeMS: 30000, // 连接空闲时间
-      serverSelectionTimeoutMS: 5000, // 服务器选择超时
-      socketTimeoutMS: 45000, // Socket超时
-      heartbeatFrequencyMS: 10000, // 心跳频率
-      
-      // 缓冲优化
-      bufferCommands: false, // 禁用命令缓冲
-      
-      // 其他优化
-      retryWrites: true,
-      w: 'majority',
-      readPreference: 'primaryPreferred', // 优先读主节点
-      compressors: ['zlib'], // 启用压缩
-    });
-
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
-    
-    // 监听连接事件
+const registerConnectionEvents = () => {
+  if (!mongoose.connection.listenerCount('error')) {
     mongoose.connection.on('error', (err) => {
-      console.error('MongoDB connection error:', err);
+      console.error('MongoDB connection error:', err.message);
     });
-    
+  }
+
+  if (!mongoose.connection.listenerCount('disconnected')) {
     mongoose.connection.on('disconnected', () => {
-      console.log('MongoDB disconnected');
+      console.warn('MongoDB disconnected');
     });
-    
+  }
+
+  if (!mongoose.connection.listenerCount('reconnected')) {
     mongoose.connection.on('reconnected', () => {
       console.log('MongoDB reconnected');
     });
+  }
+};
 
+const connectDB = async () => {
+  try {
+    const { uri: mongoURI, source, isAtlas, isSrv } = getMongoConfig();
+
+    console.log('[DB] Environment check:');
+    console.log('[DB] MONGODB_URI exists:', !!process.env.MONGODB_URI);
+    console.log('[DB] NODE_ENV:', process.env.NODE_ENV);
+    console.log(isAtlas ? '[DB] Using cloud MongoDB Atlas' : '[DB] Using local MongoDB fallback');
+    console.log(`[DB] Connection string source: ${source}`);
+    console.log(`[DB] Connection URI: ${maskMongoUriCredentials(mongoURI)}`);
+    if (isSrv) {
+      console.log('[DB] Connection URI uses SRV record lookup');
+    }
+    console.log('[DB] Attempting connection...');
+
+    const connection = await withSrvFallback(
+      (uri, options) => mongoose.connect(uri, options),
+      mongoURI,
+      getConnectionOptions({ bufferCommands: false, minPoolSize: 2 })
+    );
+
+    console.log(`MongoDB Connected: ${connection.connection?.host || mongoose.connection.host}`);
+
+    registerConnectionEvents();
+
+    return connection;
   } catch (error) {
     console.error('Database connection failed:', error);
     process.exit(1);
   }
 };
 
-module.exports = connectDB; 
+module.exports = connectDB;
