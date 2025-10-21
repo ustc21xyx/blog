@@ -12,7 +12,6 @@ const connectDB = async () => {
       heartbeatFrequencyMS: 10000, // 心跳频率
       
       // 缓冲优化
-      bufferMaxEntries: 0, // 禁用mongoose缓冲
       bufferCommands: false, // 禁用命令缓冲
       
       // 其他优化
