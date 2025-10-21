@@ -151,7 +151,6 @@ const connectDB = async () => {
         maxPoolSize: 10,
         minPoolSize: 1,
         maxIdleTimeMS: 30000,
-        bufferMaxEntries: 0,
         retryWrites: true,
         retryReads: true,
         readPreference: 'secondaryPreferred',
